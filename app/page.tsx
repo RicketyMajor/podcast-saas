@@ -7,12 +7,12 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 text-center">
       <div className="flex flex-col items-center gap-3">
-        <p className="text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-[0.2em] uppercase">
-          <span aria-hidden className="bg-primary size-2 rounded-full" />
+        <p className="flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+          <span aria-hidden className="size-2 rounded-full bg-primary" />
           En desarrollo
         </p>
         <h1 className="text-5xl font-bold tracking-tight">Ondas</h1>
-        <p className="text-muted-foreground max-w-sm">
+        <p className="max-w-sm text-muted-foreground">
           Crea, publica y escucha podcasts generados con IA.
         </p>
       </div>
