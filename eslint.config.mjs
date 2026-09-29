@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated code: shadcn/ui components and Convex bindings.
+    "components/ui/**",
+    "convex/_generated/**",
   ]),
 ]);
 
