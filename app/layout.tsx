@@ -15,7 +15,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // Dark-only in the MVP: `.dark` enables shadcn's `dark:` variants.
-    <html lang="es" className={`dark ${schibsted.variable} h-full`}>
+    // suppressHydrationWarning: browser extensions inject attributes on <html>.
+    <html
+      lang="es"
+      className={`dark ${schibsted.variable} h-full`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
