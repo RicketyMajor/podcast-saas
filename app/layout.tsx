@@ -8,7 +8,7 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Ondas",
+  title: "Waves",
   description: "Crea, publica y escucha podcasts generados con IA.",
 };
 

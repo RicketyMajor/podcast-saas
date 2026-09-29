@@ -11,7 +11,7 @@ export default function Home() {
           <span aria-hidden className="size-2 rounded-full bg-primary" />
           En desarrollo
         </p>
-        <h1 className="text-5xl font-bold tracking-tight">Ondas</h1>
+        <h1 className="text-5xl font-bold tracking-tight">Waves</h1>
         <p className="max-w-sm text-muted-foreground">
           Crea, publica y escucha podcasts generados con IA.
         </p>
