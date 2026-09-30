@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
+    "@breezystack/lamejs": "^1.2.7",
     "@convex-dev/auth": "^0.0.95",
     "@hookform/resolvers": "^5.9.1",
     "class-variance-authority": "^0.7.1",
