@@ -1,5 +1,19 @@
-import { ComingSoon } from "@/components/shared/ComingSoon";
+import { PodcastForm } from "@/components/create/PodcastForm";
+import { SectionHeader } from "@/components/shared/SectionHeader";
+import { TITLE_MAX_CHARS } from "@/convex/lib/limits";
 
-export default function CreatePodcastPage() {
-  return <ComingSoon title="Crear podcast" />;
+export default async function CreatePodcastPage({
+  searchParams,
+}: PageProps<"/create-podcast">) {
+  // `?title=` comes from the empty search state (phase 11).
+  const { title } = await searchParams;
+  const defaultTitle =
+    typeof title === "string" ? title.trim().slice(0, TITLE_MAX_CHARS) : "";
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <SectionHeader as="h1" title="Crear podcast" />
+      <PodcastForm defaultTitle={defaultTitle} />
+    </div>
+  );
 }
