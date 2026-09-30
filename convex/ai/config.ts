@@ -22,3 +22,17 @@ export const AUDIO_OUTPUT = {
   // Silence inserted between synthesized parts.
   gapMs: 250,
 } as const;
+
+// Gemini API, script generation (free tier; key from a project WITHOUT billing).
+// Verified 2026-09-30: stable, recommended, no shutdown date. gemini-3.8-flash
+// answered 503 "high demand" on the free tier, Flash-Lite answered in ~2 s.
+// https://ai.google.dev/gemini-api/docs/models · …/deprecations · …/pricing
+export const GEMINI_TEXT = {
+  provider: "gemini",
+  model: "gemini-3.5-flash-lite",
+  endpoint:
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+  // Paid-tier list prices (standard), per token.
+  usdPerInputToken: 0.3 / 1_000_000,
+  usdPerOutputToken: 2.5 / 1_000_000,
+} as const;

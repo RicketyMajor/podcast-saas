@@ -13,5 +13,14 @@ export interface TtsProvider {
   }): Promise<Pcm16>;
 }
 
-// ponytail: ImageProvider (phase 6) and TextProvider (script generation) are
-// added here when their implementations land.
+export interface TextProvider {
+  id: "gemini";
+  generateScript(input: {
+    topic: string;
+    languageLabel: string; // e.g. "Español (Latinoamérica)"
+    targetMinutes: number;
+    tone: string;
+  }): Promise<{ script: string; inputTokens: number; outputTokens: number }>;
+}
+
+// ponytail: ImageProvider lands with its implementation in phase 6.

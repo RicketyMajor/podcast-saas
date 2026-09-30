@@ -21,3 +21,16 @@ export const UPLOAD_MAX_MB = 5;
 // Chirp 3 HD `pace` values offered in the UI (Lenta · Normal · Rápida).
 export const SPEAKING_RATES = [0.9, 1, 1.15] as const;
 export const DEFAULT_SPEAKING_RATE = 1;
+
+// "Generar guion con IA" dialog.
+export const SCRIPT_TOPIC_MIN_CHARS = 3;
+export const SCRIPT_TOPIC_MAX_CHARS = 300;
+export const SCRIPT_MINUTES = [1, 3, 5] as const;
+// ~150 spoken words per minute at normal pace.
+export const WORDS_PER_MINUTE = 150;
+export const SCRIPT_TONES = [
+  "cercano",
+  "informativo",
+  "entretenido",
+  "formal",
+] as const;

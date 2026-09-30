@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeSearchText } from "../convex/lib/text";
+import { normalizeSearchText, tidyScript } from "../convex/lib/text";
 import { formatCount, formatDuration, safeRedirectPath } from "../lib/utils";
 
 describe("normalizeSearchText", () => {
@@ -39,5 +39,23 @@ describe("formatCount / formatDuration", () => {
   it("formats seconds as m:ss", () => {
     expect(formatDuration(7.06)).toBe("0:07");
     expect(formatDuration(265.1)).toBe("4:25");
+  });
+});
+
+describe("tidyScript", () => {
+  it("drops markdown and extra blank lines", () => {
+    expect(
+      tidyScript("# Título\n\n**Hola**, *mundo*.\n\n\n\n- Adiós.", 100),
+    ).toBe("Título\n\nHola, mundo.\n\nAdiós.");
+  });
+
+  it("cuts at a paragraph, else a sentence, within the limit", () => {
+    const para = "Uno dos tres cuatro.";
+    expect(tidyScript(`${para}\n\n${para}\n\n${para}`, 50)).toBe(
+      `${para}\n\n${para}`,
+    );
+    expect(tidyScript("Hola mundo. Adiós mundo cruel.", 20)).toBe(
+      "Hola mundo.",
+    );
   });
 });

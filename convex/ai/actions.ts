@@ -4,14 +4,20 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 
 import { internal } from "../_generated/api";
-import { action } from "../_generated/server";
+import { action, type ActionCtx } from "../_generated/server";
 import {
   SCRIPT_MAX_CHARS,
   SCRIPT_MIN_CHARS,
+  SCRIPT_MINUTES,
+  SCRIPT_TONES,
+  SCRIPT_TOPIC_MAX_CHARS,
+  SCRIPT_TOPIC_MIN_CHARS,
   SPEAKING_RATES,
 } from "../lib/limits";
+import { tidyScript } from "../lib/text";
 import { chunkScript, concatPcm, encodeMp3 } from "./audio";
-import { AUDIO_OUTPUT, GOOGLE_TTS } from "./config";
+import { AUDIO_OUTPUT, GEMINI_TEXT, GOOGLE_TTS } from "./config";
+import { geminiText } from "./providers/geminiText";
 import { googleTts } from "./providers/googleTts";
 import { LANGUAGES, VOICES, voiceId } from "./voices";
 
@@ -24,6 +30,29 @@ function invalid(
 function errorMessage(error: unknown): string {
   if (error instanceof ConvexError) return String(error.data.message);
   return error instanceof Error ? error.message.slice(0, 300) : "Unknown error";
+}
+
+async function requireUserId(ctx: ActionCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
+    throw new ConvexError({
+      code: "UNAUTHENTICATED",
+      message: "Inicia sesión para continuar.",
+    });
+  }
+  return userId;
+}
+
+function requireEnv(name: string, feature: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`${name} is not set`);
+    throw new ConvexError({
+      code: "AI_FAILED",
+      message: `La generación de ${feature} no está disponible ahora mismo.`,
+    });
+  }
+  return value;
 }
 
 // Order (rules/ai.md): identity → quota → provider → storage → log → response.
@@ -41,13 +70,7 @@ export const generateAudio = action({
     durationSec: v.number(),
   }),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new ConvexError({
-        code: "UNAUTHENTICATED",
-        message: "Inicia sesión para continuar.",
-      });
-    }
+    const userId = await requireUserId(ctx);
 
     const script = args.script.trim();
     if (script.length < SCRIPT_MIN_CHARS || script.length > SCRIPT_MAX_CHARS) {
@@ -66,14 +89,7 @@ export const generateAudio = action({
       throw invalid("Velocidad no disponible.");
     }
 
-    const apiKey = process.env.GOOGLE_TTS_API_KEY;
-    if (!apiKey) {
-      console.error("GOOGLE_TTS_API_KEY is not set");
-      throw new ConvexError({
-        code: "AI_FAILED",
-        message: "La generación de audio no está disponible ahora mismo.",
-      });
-    }
+    const apiKey = requireEnv("GOOGLE_TTS_API_KEY", "audio");
 
     const generationId = await ctx.runMutation(
       internal.ai.generations.reserveGeneration,
@@ -143,6 +159,87 @@ export const generateAudio = action({
       throw new ConvexError({
         code: "AI_FAILED",
         message: "No pudimos generar el audio. Inténtalo de nuevo.",
+      });
+    }
+  },
+});
+
+export const generateScript = action({
+  args: {
+    topic: v.string(),
+    languageCode: v.string(),
+    minutes: v.number(),
+    tone: v.string(),
+  },
+  returns: v.object({ script: v.string() }),
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+
+    const topic = args.topic.trim();
+    if (
+      topic.length < SCRIPT_TOPIC_MIN_CHARS ||
+      topic.length > SCRIPT_TOPIC_MAX_CHARS
+    ) {
+      throw invalid(
+        `El tema debe tener entre ${SCRIPT_TOPIC_MIN_CHARS} y ${SCRIPT_TOPIC_MAX_CHARS} caracteres.`,
+      );
+    }
+    const language = LANGUAGES.find((l) => l.code === args.languageCode);
+    if (!language) throw invalid("Idioma no disponible.");
+    if (!(SCRIPT_MINUTES as readonly number[]).includes(args.minutes)) {
+      throw invalid("Duración no disponible.");
+    }
+    if (!(SCRIPT_TONES as readonly string[]).includes(args.tone)) {
+      throw invalid("Tono no disponible.");
+    }
+
+    const apiKey = requireEnv("GEMINI_API_KEY", "guiones");
+
+    const generationId = await ctx.runMutation(
+      internal.ai.generations.reserveGeneration,
+      {
+        userId,
+        kind: "script",
+        provider: GEMINI_TEXT.provider,
+        model: GEMINI_TEXT.model,
+        inputChars: topic.length,
+        estimatedCostUsd: 0, // known after the call (token usage)
+      },
+    );
+
+    try {
+      const result = await geminiText(apiKey).generateScript({
+        topic,
+        languageLabel: language.label,
+        targetMinutes: args.minutes,
+        tone: args.tone,
+      });
+      const script = tidyScript(result.script, SCRIPT_MAX_CHARS);
+      if (script.length < SCRIPT_MIN_CHARS) throw new Error("Script too short");
+
+      await ctx.runMutation(internal.ai.generations.finishGeneration, {
+        generationId,
+        outcome: {
+          status: "success",
+          estimatedCostUsd:
+            result.inputTokens * GEMINI_TEXT.usdPerInputToken +
+            result.outputTokens * GEMINI_TEXT.usdPerOutputToken,
+        },
+      });
+      console.log(
+        `script ok: ${result.inputTokens} in / ${result.outputTokens} out tokens, ${script.length} chars`,
+      );
+      return { script };
+    } catch (error) {
+      await ctx.runMutation(internal.ai.generations.finishGeneration, {
+        generationId,
+        outcome: { status: "error", errorMessage: errorMessage(error) },
+      });
+      if (error instanceof ConvexError) throw error;
+      console.error(`script failed: ${errorMessage(error)}`);
+      throw new ConvexError({
+        code: "AI_FAILED",
+        message: "No pudimos generar el guion. Inténtalo de nuevo.",
       });
     }
   },

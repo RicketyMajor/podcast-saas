@@ -92,8 +92,10 @@ export const finishGeneration = internalMutation({
     outcome: v.union(
       v.object({
         status: v.literal("success"),
-        storageId: v.id("_storage"),
+        storageId: v.optional(v.id("_storage")), // scripts have no file
         outputSeconds: v.optional(v.number()),
+        // Set when the cost is only known after the call (token usage).
+        estimatedCostUsd: v.optional(v.number()),
       }),
       v.object({
         status: v.literal("error"),
