@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
+
+import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
+
 import "./globals.css";
 
 const schibsted = Schibsted_Grotesk({
@@ -21,7 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${schibsted.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
     </html>
   );
 }
