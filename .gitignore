@@ -52,3 +52,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .interface-design/
+# Convex agent skills (npx convex ai-files)
+.agents/
+skills-lock.json
+convex/_generated/ai/
