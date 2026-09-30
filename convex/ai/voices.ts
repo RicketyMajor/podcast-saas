@@ -20,3 +20,5 @@ export const VOICES: readonly Voice[] = [
 export function voiceId(languageCode: string, voiceName: string): string {
   return `${languageCode}-Chirp3-HD-${voiceName}`;
 }
+
+export const DEFAULT_VOICE_NAME = "Aoede";
