@@ -1,5 +1,6 @@
 import { Mic } from "lucide-react";
 
+import { TrendingCount } from "@/components/podcast/TrendingCount";
 import { Button } from "@/components/ui/button";
 
 // Placeholder home (phase 0). Replaced by the dashboard in later phases.
@@ -15,6 +16,7 @@ export default function Home() {
         <p className="max-w-sm text-muted-foreground">
           Crea, publica y escucha podcasts generados con IA.
         </p>
+        <TrendingCount />
       </div>
       <Button size="lg" type="button">
         <Mic aria-hidden />

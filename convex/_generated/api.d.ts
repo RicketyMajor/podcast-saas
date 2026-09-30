@@ -9,6 +9,7 @@
  */
 
 import type * as lib_text from "../lib/text.js";
+import type * as podcasts from "../podcasts.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "lib/text": typeof lib_text;
+  podcasts: typeof podcasts;
 }>;
 
 /**
