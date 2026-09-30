@@ -11,6 +11,8 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@auth/core": "^0.41.3",
+    "@convex-dev/auth": "^0.0.95",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "convex": "^1.46.0",
