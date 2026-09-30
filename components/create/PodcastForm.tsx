@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
@@ -9,9 +8,12 @@ import {
   GeneratePodcast,
   type GeneratedAudio,
 } from "@/components/create/GeneratePodcast";
+import {
+  GenerateThumbnail,
+  type Thumbnail,
+} from "@/components/create/GenerateThumbnail";
 import { ScriptDialog } from "@/components/create/ScriptDialog";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -65,6 +67,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
   });
 
   const [audio, setAudio] = useState<GeneratedAudio | null>(null);
+  const [image, setImage] = useState<Thumbnail | null>(null);
   const languageCode = useWatch({ control, name: "languageCode" });
 
   // ponytail: publishing lands in phase 7 (podcasts.create); the button stays disabled until then.
@@ -249,11 +252,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
 
       <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Portada</FieldLegend>
-        <EmptyState
-          icon={ImageIcon}
-          title="Aquí crearás la portada"
-          description="Podrás generarla con IA o subir tu propia imagen."
-        />
+        <GenerateThumbnail image={image} onImageChange={setImage} />
       </FieldSet>
 
       <div className="flex flex-col items-stretch gap-2 sm:items-end">

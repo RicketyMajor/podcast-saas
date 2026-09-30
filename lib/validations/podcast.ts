@@ -9,6 +9,7 @@ import {
   SPEAKING_RATES,
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
+  UPLOAD_MAX_MB,
 } from "@/convex/lib/limits";
 import { formatCount } from "@/lib/utils";
 
@@ -40,3 +41,16 @@ export const podcastFormSchema = z.object({
 });
 
 export type PodcastFormValues = z.infer<typeof podcastFormSchema>;
+
+export const COVER_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+/** Checks a manual cover before it reaches Convex; returns an error or null. */
+export function coverFileError(file: { type: string; size: number }) {
+  if (!COVER_TYPES.includes(file.type)) {
+    return "Formato no admitido. Sube una imagen PNG, JPG o WebP.";
+  }
+  if (file.size > UPLOAD_MAX_MB * 1024 * 1024) {
+    return `La imagen pesa más de ${UPLOAD_MAX_MB} MB. Elige una más liviana.`;
+  }
+  return null;
+}
