@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
@@ -17,16 +19,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // Dark-only in the MVP: `.dark` enables shadcn's `dark:` variants.
-    // suppressHydrationWarning: browser extensions inject attributes on <html>.
-    <html
-      lang="es"
-      className={`dark ${schibsted.variable} h-full`}
-      suppressHydrationWarning
-    >
-      <body className="flex min-h-full flex-col">
-        <ConvexClientProvider>{children}</ConvexClientProvider>
-      </body>
-    </html>
+    <ConvexAuthNextjsServerProvider>
+      {/* Dark-only in the MVP: `.dark` enables shadcn's `dark:` variants.
+          suppressHydrationWarning: browser extensions inject attributes on <html>. */}
+      <html
+        lang="es"
+        className={`dark ${schibsted.variable} h-full`}
+        suppressHydrationWarning
+      >
+        <body className="flex min-h-full flex-col">
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+          {/* No next-themes provider: the app is dark-only. */}
+          <Toaster theme="dark" />
+        </body>
+      </html>
+    </ConvexAuthNextjsServerProvider>
   );
 }
