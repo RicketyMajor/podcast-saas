@@ -1,14 +1,13 @@
 import { Mic } from "lucide-react";
 import Link from "next/link";
 
-import { SessionIndicator } from "@/components/auth/SessionIndicator";
 import { TrendingCount } from "@/components/podcast/TrendingCount";
 import { Button } from "@/components/ui/button";
 
-// Placeholder home (phase 0). Replaced by the dashboard in later phases.
+// Placeholder home; phase 7 replaces it with trending and latest podcasts.
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
       <div className="flex flex-col items-center gap-3">
         <p className="flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
           <span aria-hidden className="size-2 rounded-full bg-primary" />
@@ -26,7 +25,6 @@ export default function Home() {
           Crear podcast
         </Link>
       </Button>
-      <SessionIndicator />
-    </main>
+    </div>
   );
 }
