@@ -9,6 +9,7 @@ import {
   GeneratePodcast,
   type GeneratedAudio,
 } from "@/components/create/GeneratePodcast";
+import { ScriptDialog } from "@/components/create/ScriptDialog";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ const FIELDSET = "min-w-0";
 const LEGEND = "mb-4 text-lg font-semibold tracking-tight";
 
 export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
-  const { control, handleSubmit } = useForm<PodcastFormValues>({
+  const { control, handleSubmit, setValue } = useForm<PodcastFormValues>({
     resolver: zodResolver(podcastFormSchema),
     mode: "onTouched",
     defaultValues: {
@@ -188,6 +189,21 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
 
       <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Guion</FieldLegend>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Escríbelo tú o pide un borrador a la IA.
+          </p>
+          <ScriptDialog
+            control={control}
+            onGenerated={(script) =>
+              setValue("script", script, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              })
+            }
+          />
+        </div>
         <Controller
           name="script"
           control={control}
