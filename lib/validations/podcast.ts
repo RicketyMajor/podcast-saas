@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { VOICES } from "@/convex/ai/voices";
+import { LANGUAGES, VOICES } from "@/convex/ai/voices";
 import {
   DESCRIPTION_MAX_CHARS,
   DESCRIPTION_MIN_CHARS,
@@ -10,7 +10,6 @@ import {
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
 } from "@/convex/lib/limits";
-import { LANGUAGES } from "@/lib/constants";
 import { formatCount } from "@/lib/utils";
 
 const text = (label: string, min: number, max: number) =>

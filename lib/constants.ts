@@ -22,14 +22,6 @@ export const EMPTY_STATES = {
   },
 } as const;
 
-// Locales with Chirp 3 HD voices (docs/screens.md §2.3).
-export const LANGUAGES = [
-  { code: "es-US", label: "Español (Latinoamérica)" },
-  { code: "es-ES", label: "Español (España)" },
-  { code: "en-US", label: "Inglés (EE. UU.)" },
-  { code: "pt-BR", label: "Portugués (Brasil)" },
-] as const;
-
 export const SPEAKING_RATE_LABELS: Record<number, string> = {
   0.9: "Lenta",
   1: "Normal",

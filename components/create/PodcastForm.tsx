@@ -25,13 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_VOICE_NAME } from "@/convex/ai/voices";
+import { DEFAULT_VOICE_NAME, LANGUAGES } from "@/convex/ai/voices";
 import {
   DEFAULT_SPEAKING_RATE,
   SCRIPT_MAX_CHARS,
   SPEAKING_RATES,
 } from "@/convex/lib/limits";
-import { LANGUAGES, SPEAKING_RATE_LABELS } from "@/lib/constants";
+import { SPEAKING_RATE_LABELS } from "@/lib/constants";
 import { cn, formatCount } from "@/lib/utils";
 import {
   podcastFormSchema,
