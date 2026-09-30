@@ -8,6 +8,12 @@
  * @module
  */
 
+import type * as ai_actions from "../ai/actions.js";
+import type * as ai_audio from "../ai/audio.js";
+import type * as ai_config from "../ai/config.js";
+import type * as ai_generations from "../ai/generations.js";
+import type * as ai_providers_googleTts from "../ai/providers/googleTts.js";
+import type * as ai_providers_types from "../ai/providers/types.js";
 import type * as ai_voices from "../ai/voices.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
@@ -24,6 +30,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "ai/actions": typeof ai_actions;
+  "ai/audio": typeof ai_audio;
+  "ai/config": typeof ai_config;
+  "ai/generations": typeof ai_generations;
+  "ai/providers/googleTts": typeof ai_providers_googleTts;
+  "ai/providers/types": typeof ai_providers_types;
   "ai/voices": typeof ai_voices;
   auth: typeof auth;
   http: typeof http;
