@@ -3,19 +3,16 @@
 import { ConvexError } from "convex/values";
 
 import { GOOGLE_TTS } from "../config";
+import { errorDetail, fetchWithRetry } from "./http";
 import type { Pcm16, TtsProvider } from "./types";
 
-const MAX_RETRIES = 2;
 const BLOCKED = /sensitive|safety|blocked|inappropriate|harm/i;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-function aiFailed(): ConvexError<{ code: string; message: string }> {
-  return new ConvexError({
+const aiFailed = () =>
+  new ConvexError({
     code: "AI_FAILED",
     message: "No pudimos generar el audio. Inténtalo de nuevo.",
   });
-}
 
 /** Returns the samples of the WAV "data" chunk (header size isn't fixed). */
 function wavToPcm16(wav: Buffer): Int16Array {
@@ -54,68 +51,46 @@ export function googleTts(apiKey: string): TtsProvider {
         },
       });
 
-      for (let attempt = 0; ; attempt++) {
-        let res: Response;
-        try {
-          res = await fetch(GOOGLE_TTS.endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "x-goog-api-key": apiKey,
-            },
-            body,
-          });
-        } catch {
-          if (attempt < MAX_RETRIES) {
-            await sleep(500 * 3 ** attempt);
-            continue;
-          }
-          throw aiFailed();
-        }
-
-        if (res.ok) {
-          const { audioContent } = (await res.json()) as {
-            audioContent: string;
-          };
-          return {
-            samples: wavToPcm16(Buffer.from(audioContent, "base64")),
-            sampleRate: 24000,
-          } satisfies Pcm16;
-        }
-
-        const retryable = res.status === 429 || res.status >= 500;
-        if (retryable && attempt < MAX_RETRIES) {
-          await sleep(500 * 3 ** attempt);
-          continue;
-        }
-
-        // Log status and provider message only; never request bodies or audio.
-        const detail = await res.text().catch(() => "");
-        const message = (() => {
-          try {
-            return String(JSON.parse(detail)?.error?.message ?? "");
-          } catch {
-            return "";
-          }
-        })();
-        console.error(`Cloud TTS ${res.status}: ${message.slice(0, 200)}`);
-
-        if (res.status === 400 && BLOCKED.test(message)) {
-          throw new ConvexError({
-            code: "AI_BLOCKED",
-            message:
-              "El proveedor de IA no pudo procesar este contenido. Prueba con otro texto.",
-          });
-        }
-        if (res.status === 429) {
-          throw new ConvexError({
-            code: "QUOTA_EXCEEDED",
-            message:
-              "El servicio de voz está saturado en este momento. Inténtalo en unos minutos.",
-          });
-        }
+      let res: Response;
+      try {
+        res = await fetchWithRetry(GOOGLE_TTS.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "x-goog-api-key": apiKey,
+          },
+          body,
+        });
+      } catch {
         throw aiFailed();
       }
+
+      if (res.ok) {
+        const { audioContent } = (await res.json()) as { audioContent: string };
+        return {
+          samples: wavToPcm16(Buffer.from(audioContent, "base64")),
+          sampleRate: 24000,
+        } satisfies Pcm16;
+      }
+
+      // Log status and provider message only; never request bodies or audio.
+      const detail = await errorDetail(res);
+      console.error(`Cloud TTS ${res.status}: ${detail}`);
+      if (res.status === 400 && BLOCKED.test(detail)) {
+        throw new ConvexError({
+          code: "AI_BLOCKED",
+          message:
+            "El proveedor de IA no pudo procesar este contenido. Prueba con otro texto.",
+        });
+      }
+      if (res.status === 429) {
+        throw new ConvexError({
+          code: "QUOTA_EXCEEDED",
+          message:
+            "El servicio de voz está saturado en este momento. Inténtalo en unos minutos.",
+        });
+      }
+      throw aiFailed();
     },
   };
 }
