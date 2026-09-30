@@ -8,11 +8,15 @@ const isProtectedRoute = createRouteMatcher([
   "/create-podcast(.*)",
   "/podcasts/(.*)/edit",
 ]);
+const isAuthPage = createRouteMatcher(["/sign-in", "/sign-up"]);
 
 // Also proxies Convex Auth's /api/auth requests, so it must stay mounted
 // even if route protection falls back to the client (get-convex/convex-auth#271).
 export default convexAuthNextjsMiddleware(
   async (request, { convexAuth }) => {
+    if (isAuthPage(request) && (await convexAuth.isAuthenticated())) {
+      return nextjsMiddlewareRedirect(request, "/");
+    }
     if (isProtectedRoute(request) && !(await convexAuth.isAuthenticated())) {
       const redirectTo = request.nextUrl.pathname + request.nextUrl.search;
       return nextjsMiddlewareRedirect(

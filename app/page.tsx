@@ -1,5 +1,7 @@
 import { Mic } from "lucide-react";
+import Link from "next/link";
 
+import { SessionIndicator } from "@/components/auth/SessionIndicator";
 import { TrendingCount } from "@/components/podcast/TrendingCount";
 import { Button } from "@/components/ui/button";
 
@@ -18,10 +20,13 @@ export default function Home() {
         </p>
         <TrendingCount />
       </div>
-      <Button size="lg" type="button">
-        <Mic aria-hidden />
-        Crear podcast
+      <Button asChild size="lg">
+        <Link href="/create-podcast">
+          <Mic aria-hidden />
+          Crear podcast
+        </Link>
       </Button>
+      <SessionIndicator />
     </main>
   );
 }
