@@ -1,9 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AudioLines, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import {
+  GeneratePodcast,
+  type GeneratedAudio,
+} from "@/components/create/GeneratePodcast";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -57,6 +62,8 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
       script: "",
     },
   });
+
+  const [audio, setAudio] = useState<GeneratedAudio | null>(null);
 
   // ponytail: publishing lands in phase 7 (podcasts.create); the button stays disabled until then.
   const onSubmit = handleSubmit(() => {});
@@ -215,10 +222,10 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
 
       <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Audio</FieldLegend>
-        <EmptyState
-          icon={AudioLines}
-          title="Aquí generarás el audio"
-          description="Convertiremos tu guion en voz con la voz y la velocidad que elegiste."
+        <GeneratePodcast
+          control={control}
+          audio={audio}
+          onAudioChange={setAudio}
         />
       </FieldSet>
 
