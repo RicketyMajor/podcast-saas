@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageIcon } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import {
   GeneratePodcast,
@@ -65,6 +65,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
   });
 
   const [audio, setAudio] = useState<GeneratedAudio | null>(null);
+  const languageCode = useWatch({ control, name: "languageCode" });
 
   // ponytail: publishing lands in phase 7 (podcasts.create); the button stays disabled until then.
   const onSubmit = handleSubmit(() => {});
@@ -176,6 +177,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
                 <VoiceSelect
                   id="voiceName"
                   value={field.value}
+                  languageCode={languageCode}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   invalid={fieldState.invalid}
