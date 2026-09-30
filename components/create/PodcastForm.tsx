@@ -32,7 +32,7 @@ import {
   SPEAKING_RATES,
 } from "@/convex/lib/limits";
 import { LANGUAGES, SPEAKING_RATE_LABELS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, formatCount } from "@/lib/utils";
 import {
   podcastFormSchema,
   type PodcastFormValues,
@@ -40,7 +40,9 @@ import {
 
 const CONTROL = "h-10";
 const SELECT_TRIGGER = "h-10 w-full data-[size=default]:h-10";
-const LEGEND = "mb-0 text-lg font-semibold tracking-tight";
+// Fieldsets default to min-width: min-content; long unbroken text would overflow.
+const FIELDSET = "min-w-0";
+const LEGEND = "mb-4 text-lg font-semibold tracking-tight";
 
 export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
   const { control, handleSubmit } = useForm<PodcastFormValues>({
@@ -61,7 +63,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-10">
-      <FieldSet>
+      <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Detalles</FieldLegend>
         <FieldGroup>
           <Controller
@@ -177,7 +179,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
         </FieldGroup>
       </FieldSet>
 
-      <FieldSet>
+      <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Guion</FieldLegend>
         <Controller
           name="script"
@@ -202,8 +204,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
                     length > SCRIPT_MAX_CHARS && "text-destructive",
                   )}
                 >
-                  {length.toLocaleString("es")} /{" "}
-                  {SCRIPT_MAX_CHARS.toLocaleString("es")}
+                  {formatCount(length)} / {formatCount(SCRIPT_MAX_CHARS)}
                 </FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>
@@ -212,7 +213,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
         />
       </FieldSet>
 
-      <FieldSet>
+      <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Audio</FieldLegend>
         <EmptyState
           icon={AudioLines}
@@ -221,7 +222,7 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
         />
       </FieldSet>
 
-      <FieldSet>
+      <FieldSet className={FIELDSET}>
         <FieldLegend className={LEGEND}>Portada</FieldLegend>
         <EmptyState
           icon={ImageIcon}

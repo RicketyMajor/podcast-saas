@@ -11,8 +11,7 @@ import {
   TITLE_MIN_CHARS,
 } from "@/convex/lib/limits";
 import { LANGUAGES } from "@/lib/constants";
-
-const formatCount = (n: number) => n.toLocaleString("es");
+import { formatCount } from "@/lib/utils";
 
 const text = (label: string, min: number, max: number) =>
   z
