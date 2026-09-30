@@ -55,7 +55,12 @@ export default defineSchema({
     storageId: v.optional(v.id("_storage")),
     consumed: v.boolean(), // true once the file is attached to a podcast
     estimatedCostUsd: v.number(), // list price, even inside the free tier
-    status: v.union(v.literal("success"), v.literal("error")),
+    // "pending" reserves quota while the provider call runs (ADR-017).
+    status: v.union(
+      v.literal("pending"),
+      v.literal("success"),
+      v.literal("error"),
+    ),
     errorMessage: v.optional(v.string()),
   })
     .index("by_user", ["userId"]) // + implicit _creationTime → daily quotas
