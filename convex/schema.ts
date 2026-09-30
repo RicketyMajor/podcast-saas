@@ -1,9 +1,10 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-// Phase 2 adds `...authTables` from @convex-dev/auth. `users` already mirrors
-// the Convex Auth fields and indexes, so that change is additive.
 export default defineSchema({
+  ...authTables,
+  // Overrides the Convex Auth `users` table: keeps its fields and indexes, adds ours.
   users: defineTable({
     name: v.optional(v.string()),
     image: v.optional(v.string()),
