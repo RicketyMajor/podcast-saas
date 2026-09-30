@@ -10,11 +10,13 @@ export const SCRIPT_MIN_CHARS = 50;
 export const SCRIPT_MAX_CHARS = 5_000;
 
 export const DAILY_AUDIO_GENERATIONS = 10;
-export const DAILY_IMAGE_GENERATIONS = 20;
+// ~57 covers/day fit in the Cloudflare free tier for the whole app.
+export const DAILY_IMAGE_GENERATIONS = 10;
 export const DAILY_SCRIPT_GENERATIONS = 20;
 // Below the 1M chars/month free tier of Chirp 3 HD.
 export const GLOBAL_MONTHLY_TTS_CHARS = 900_000;
 
+export const IMAGE_PROMPT_MIN_CHARS = 3;
 export const IMAGE_PROMPT_MAX_CHARS = 1_000;
 export const UPLOAD_MAX_MB = 5;
 

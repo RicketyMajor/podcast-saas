@@ -23,4 +23,7 @@ export interface TextProvider {
   }): Promise<{ script: string; inputTokens: number; outputTokens: number }>;
 }
 
-// ponytail: ImageProvider lands with its implementation in phase 6.
+export interface ImageProvider {
+  id: "cloudflare";
+  generate(input: { prompt: string }): Promise<{ bytes: Uint8Array<ArrayBuffer>; mimeType: string }>;
+}

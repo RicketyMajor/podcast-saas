@@ -6,6 +6,8 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import { action, type ActionCtx } from "../_generated/server";
 import {
+  IMAGE_PROMPT_MAX_CHARS,
+  IMAGE_PROMPT_MIN_CHARS,
   SCRIPT_MAX_CHARS,
   SCRIPT_MIN_CHARS,
   SCRIPT_MINUTES,
@@ -16,7 +18,13 @@ import {
 } from "../lib/limits";
 import { tidyScript } from "../lib/text";
 import { chunkScript, concatPcm, encodeMp3 } from "./audio";
-import { AUDIO_OUTPUT, GEMINI_TEXT, GOOGLE_TTS } from "./config";
+import {
+  AUDIO_OUTPUT,
+  CLOUDFLARE_IMAGE,
+  GEMINI_TEXT,
+  GOOGLE_TTS,
+} from "./config";
+import { cloudflareImage } from "./providers/cloudflareImage";
 import { geminiText } from "./providers/geminiText";
 import { googleTts } from "./providers/googleTts";
 import { LANGUAGES, VOICES, voiceId } from "./voices";
@@ -240,6 +248,69 @@ export const generateScript = action({
       throw new ConvexError({
         code: "AI_FAILED",
         message: "No pudimos generar el guion. Inténtalo de nuevo.",
+      });
+    }
+  },
+});
+
+export const generateThumbnail = action({
+  args: { prompt: v.string() },
+  returns: v.object({ storageId: v.id("_storage"), url: v.string() }),
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+
+    const prompt = args.prompt.trim();
+    if (
+      prompt.length < IMAGE_PROMPT_MIN_CHARS ||
+      prompt.length > IMAGE_PROMPT_MAX_CHARS
+    ) {
+      const count = new Intl.NumberFormat("es", { useGrouping: "always" });
+      throw invalid(
+        `La descripción debe tener entre ${IMAGE_PROMPT_MIN_CHARS} y ${count.format(IMAGE_PROMPT_MAX_CHARS)} caracteres.`,
+      );
+    }
+
+    const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID", "portadas");
+    const apiToken = requireEnv("CLOUDFLARE_API_TOKEN", "portadas");
+
+    const generationId = await ctx.runMutation(
+      internal.ai.generations.reserveGeneration,
+      {
+        userId,
+        kind: "image",
+        provider: CLOUDFLARE_IMAGE.provider,
+        model: CLOUDFLARE_IMAGE.model,
+        inputChars: prompt.length,
+        estimatedCostUsd: CLOUDFLARE_IMAGE.usdPerImage,
+      },
+    );
+
+    try {
+      const image = await cloudflareImage(accountId, apiToken).generate({
+        prompt,
+      });
+      const storageId = await ctx.storage.store(
+        new Blob([image.bytes], { type: image.mimeType }),
+      );
+      const url = await ctx.storage.getUrl(storageId);
+      if (url === null) throw new Error("Stored image has no URL");
+
+      await ctx.runMutation(internal.ai.generations.finishGeneration, {
+        generationId,
+        outcome: { status: "success", storageId },
+      });
+      console.log(`image ok: ${prompt.length} chars, ${image.bytes.length} bytes`);
+      return { storageId, url };
+    } catch (error) {
+      await ctx.runMutation(internal.ai.generations.finishGeneration, {
+        generationId,
+        outcome: { status: "error", errorMessage: errorMessage(error) },
+      });
+      if (error instanceof ConvexError) throw error;
+      console.error(`image failed: ${errorMessage(error)}`);
+      throw new ConvexError({
+        code: "AI_FAILED",
+        message: "No pudimos generar la portada. Inténtalo de nuevo.",
       });
     }
   },

@@ -36,3 +36,18 @@ export const GEMINI_TEXT = {
   usdPerInputToken: 0.3 / 1_000_000,
   usdPerOutputToken: 2.5 / 1_000_000,
 } as const;
+
+// Cloudflare Workers AI, cover art (Free plan: 10,000 neurons/day, then calls
+// fail instead of billing; never move the account to Workers Paid).
+// Verified 2026-09-30: JPEG 1024×1024 in base64, ~2.5 s. Measured cost:
+// 19.2 + 38.4 × steps neurons (4 steps = 172.8 ≈ 57 covers/day app-wide).
+// https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/ · …/platform/pricing/
+export const CLOUDFLARE_IMAGE = {
+  provider: "cloudflare",
+  model: "@cf/black-forest-labs/flux-1-schnell",
+  endpoint: (accountId: string) =>
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
+  steps: 4,
+  // List price: USD 0.011 per 1,000 neurons beyond the free allocation.
+  usdPerImage: (172.8 * 0.011) / 1_000,
+} as const;

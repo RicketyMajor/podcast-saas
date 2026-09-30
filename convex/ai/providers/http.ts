@@ -22,11 +22,18 @@ export async function fetchWithRetry(
   }
 }
 
-/** Provider error message from a JSON error body, for logs (never the request). */
+/**
+ * Provider error message from a JSON error body, for logs (never the request).
+ * Google: `{ error: { message } }` · Cloudflare: `{ errors: [{ message }] }`.
+ */
 export async function errorDetail(res: Response): Promise<string> {
   try {
-    const body = (await res.json()) as { error?: { message?: string } };
-    return String(body.error?.message ?? "").slice(0, 200);
+    const body = (await res.json()) as {
+      error?: { message?: string };
+      errors?: { message?: string }[];
+    };
+    const message = body.error?.message ?? body.errors?.[0]?.message ?? "";
+    return String(message).slice(0, 200);
   } catch {
     return "";
   }
