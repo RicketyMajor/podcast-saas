@@ -230,3 +230,22 @@ export const create = mutation({
     return podcastId;
   },
 });
+
+// ponytail: public and unauthenticated by design (architecture §5.6), so it can
+// be inflated; add rate limiting by user or IP if views start to matter.
+export const registerView = mutation({
+  args: { podcastId: v.id("podcasts") },
+  returns: v.null(),
+  handler: async (ctx, { podcastId }) => {
+    const podcast = await ctx.db.get("podcasts", podcastId);
+    if (podcast === null) return null;
+    await ctx.db.patch("podcasts", podcastId, { views: podcast.views + 1 });
+    const author = await ctx.db.get("users", podcast.authorId);
+    if (author !== null) {
+      await ctx.db.patch("users", author._id, {
+        totalViews: (author.totalViews ?? 0) + 1,
+      });
+    }
+    return null;
+  },
+});
