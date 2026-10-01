@@ -299,7 +299,9 @@ export const generateThumbnail = action({
         generationId,
         outcome: { status: "success", storageId },
       });
-      console.log(`image ok: ${prompt.length} chars, ${image.bytes.length} bytes`);
+      console.log(
+        `image ok: ${prompt.length} chars, ${image.bytes.length} bytes`,
+      );
       return { storageId, url };
     } catch (error) {
       await ctx.runMutation(internal.ai.generations.finishGeneration, {

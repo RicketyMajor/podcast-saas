@@ -25,5 +25,7 @@ export interface TextProvider {
 
 export interface ImageProvider {
   id: "cloudflare";
-  generate(input: { prompt: string }): Promise<{ bytes: Uint8Array<ArrayBuffer>; mimeType: string }>;
+  generate(input: {
+    prompt: string;
+  }): Promise<{ bytes: Uint8Array<ArrayBuffer>; mimeType: string }>;
 }

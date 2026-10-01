@@ -1,4 +1,7 @@
-import { paginationOptsValidator, paginationResultValidator } from "convex/server";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 import { ConvexError, v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
@@ -129,7 +132,12 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
-    const title = text(args.title, "El título", TITLE_MIN_CHARS, TITLE_MAX_CHARS);
+    const title = text(
+      args.title,
+      "El título",
+      TITLE_MIN_CHARS,
+      TITLE_MAX_CHARS,
+    );
     const description = text(
       args.description,
       "La descripción",
@@ -156,7 +164,10 @@ export const create = mutation({
     // stale audio is only blocked in the UI; store a script hash on the
     // generation if that needs enforcing server-side.
     const audio = await generationOf(ctx, args.audioStorageId);
-    if (!usable(audio, user._id, "audio") || audio?.outputSeconds === undefined) {
+    if (
+      !usable(audio, user._id, "audio") ||
+      audio?.outputSeconds === undefined
+    ) {
       throw invalid("El audio no es válido. Vuelve a generarlo.");
     }
 
@@ -176,7 +187,9 @@ export const create = mutation({
         !COVER_TYPES.includes(file.contentType ?? "") ||
         file.size > UPLOAD_MAX_MB * 1024 * 1024
       ) {
-        throw invalid("La portada no es válida. Sube una imagen PNG, JPG o WebP.");
+        throw invalid(
+          "La portada no es válida. Sube una imagen PNG, JPG o WebP.",
+        );
       }
       imageSource = "upload";
     }
