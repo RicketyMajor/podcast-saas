@@ -5,6 +5,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 export type Track = {
   podcastId: Id<"podcasts">;
   title: string;
+  authorId: Id<"users">;
   authorName: string;
   imageUrl: string | null;
   audioUrl: string;
