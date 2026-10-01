@@ -1,11 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   GeneratePodcast,
+  sameSource,
   type GeneratedAudio,
 } from "@/components/create/GeneratePodcast";
 import {
@@ -33,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/convex/_generated/api";
 import { DEFAULT_VOICE_NAME, LANGUAGES } from "@/convex/ai/voices";
 import {
   DEFAULT_SPEAKING_RATE,
@@ -53,7 +60,14 @@ const FIELDSET = "min-w-0";
 const LEGEND = "mb-4 text-lg font-semibold tracking-tight";
 
 export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
-  const { control, handleSubmit, setValue } = useForm<PodcastFormValues>({
+  const router = useRouter();
+  const createPodcast = useMutation(api.podcasts.create);
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { isValid, isSubmitting },
+  } = useForm<PodcastFormValues>({
     resolver: zodResolver(podcastFormSchema),
     mode: "onTouched",
     defaultValues: {
@@ -68,10 +82,47 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
 
   const [audio, setAudio] = useState<GeneratedAudio | null>(null);
   const [image, setImage] = useState<Thumbnail | null>(null);
-  const languageCode = useWatch({ control, name: "languageCode" });
+  const [script, languageCode, voiceName, speakingRate] = useWatch({
+    control,
+    name: ["script", "languageCode", "voiceName", "speakingRate"],
+  });
+  const audioReady =
+    audio !== null &&
+    sameSource(audio.source, { script, languageCode, voiceName, speakingRate });
+  const canPublish = isValid && audioReady && image !== null;
+  const publishHelp = !audioReady
+    ? "Genera el audio con el guion actual para publicar."
+    : image === null
+      ? "Agrega una portada para publicar."
+      : !isValid
+        ? "Revisa los campos marcados."
+        : null;
 
-  // ponytail: publishing lands in phase 7 (podcasts.create); the button stays disabled until then.
-  const onSubmit = handleSubmit(() => {});
+  const onSubmit = handleSubmit(async (values) => {
+    if (!audio || !audioReady || !image) return;
+    try {
+      await createPodcast({
+        title: values.title,
+        description: values.description,
+        transcript: values.script,
+        languageCode: values.languageCode,
+        voiceName: values.voiceName,
+        speakingRate: Number(values.speakingRate),
+        audioStorageId: audio.storageId,
+        imageStorageId: image.storageId,
+        imagePrompt: image.prompt,
+      });
+      toast.success("¡Podcast publicado!");
+      // ponytail: goes to the podcast detail once it exists (phase 9).
+      router.push("/");
+    } catch (err) {
+      toast.error(
+        err instanceof ConvexError
+          ? String((err.data as { message?: string }).message)
+          : "Algo salió mal. Inténtalo de nuevo.",
+      );
+    }
+  });
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-10">
@@ -259,14 +310,17 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
         <Button
           type="submit"
           size="lg"
-          disabled
-          aria-describedby="publish-help"
+          disabled={!canPublish || isSubmitting}
+          aria-describedby={publishHelp ? "publish-help" : undefined}
         >
-          Publicar podcast
+          {isSubmitting && <Loader2 aria-hidden className="animate-spin" />}
+          {isSubmitting ? "Publicando…" : "Publicar podcast"}
         </Button>
-        <p id="publish-help" className="text-sm text-muted-foreground">
-          Necesitas el audio y la portada para publicar.
-        </p>
+        {publishHelp && (
+          <p id="publish-help" className="text-sm text-muted-foreground">
+            {publishHelp}
+          </p>
+        )}
       </div>
     </form>
   );

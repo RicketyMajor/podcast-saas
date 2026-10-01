@@ -17,7 +17,7 @@ import {
   type PodcastFormValues,
 } from "@/lib/validations/podcast";
 
-type AudioSource = Pick<
+export type AudioSource = Pick<
   PodcastFormValues,
   "script" | "languageCode" | "voiceName" | "speakingRate"
 >;
@@ -31,7 +31,7 @@ export type GeneratedAudio = {
 
 const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
 
-function sameSource(a: AudioSource, b: AudioSource) {
+export function sameSource(a: AudioSource, b: AudioSource) {
   return (
     a.script.trim() === b.script.trim() &&
     a.languageCode === b.languageCode &&
