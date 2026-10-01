@@ -18,12 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
+  COVER_TYPES,
   IMAGE_PROMPT_MAX_CHARS,
   IMAGE_PROMPT_MIN_CHARS,
   UPLOAD_MAX_MB,
 } from "@/convex/lib/limits";
 import { cn, formatCount } from "@/lib/utils";
-import { COVER_TYPES, coverFileError } from "@/lib/validations/podcast";
+import { coverFileError } from "@/lib/validations/podcast";
 
 export type Thumbnail = {
   storageId: Id<"_storage">;

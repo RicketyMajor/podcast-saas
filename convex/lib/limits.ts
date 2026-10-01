@@ -19,6 +19,11 @@ export const GLOBAL_MONTHLY_TTS_CHARS = 900_000;
 export const IMAGE_PROMPT_MIN_CHARS = 3;
 export const IMAGE_PROMPT_MAX_CHARS = 1_000;
 export const UPLOAD_MAX_MB = 5;
+export const COVER_TYPES: readonly string[] = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
 
 // Chirp 3 HD `pace` values offered in the UI (Lenta · Normal · Rápida).
 export const SPEAKING_RATES = [0.9, 1, 1.15] as const;

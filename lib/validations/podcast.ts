@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { LANGUAGES, VOICES } from "@/convex/ai/voices";
 import {
+  COVER_TYPES,
   DESCRIPTION_MAX_CHARS,
   DESCRIPTION_MIN_CHARS,
   SCRIPT_MAX_CHARS,
@@ -41,8 +42,6 @@ export const podcastFormSchema = z.object({
 });
 
 export type PodcastFormValues = z.infer<typeof podcastFormSchema>;
-
-export const COVER_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 /** Checks a manual cover before it reaches Convex; returns an error or null. */
 export function coverFileError(file: { type: string; size: number }) {

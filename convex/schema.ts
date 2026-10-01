@@ -65,5 +65,6 @@ export default defineSchema({
   })
     .index("by_user", ["userId"]) // + implicit _creationTime → daily quotas
     .index("by_kind", ["kind"]) // + implicit _creationTime → global monthly TTS cap
-    .index("by_consumed", ["consumed"]),
+    .index("by_consumed", ["consumed"])
+    .index("by_storage", ["storageId"]), // file → generation, on publish
 });
