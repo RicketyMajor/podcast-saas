@@ -20,6 +20,10 @@ export const EMPTY_STATES = {
     title: "Próximamente",
     description: "Estamos preparando esta sección.",
   },
+  noPodcasts: {
+    title: "Aún no hay podcasts. ¡Publica el primero!",
+    description: "Escribe un guion, elige una voz y la IA hace el resto.",
+  },
 } as const;
 
 export const SPEAKING_RATE_LABELS: Record<number, string> = {
