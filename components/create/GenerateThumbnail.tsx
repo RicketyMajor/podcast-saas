@@ -23,7 +23,7 @@ import { cn, formatCount } from "@/lib/utils";
 import { coverFileError } from "@/lib/validations/podcast";
 
 export type Thumbnail = {
-  storageId: Id<"_storage">;
+  storageId?: Id<"_storage">; // undefined = the published file, unchanged
   url: string;
   source: "ai" | "upload";
   prompt?: string;
@@ -45,7 +45,7 @@ export function GenerateThumbnail({
 }) {
   const generateThumbnail = useAction(api.ai.actions.generateThumbnail);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(image?.prompt ?? "");
   const [pending, setPending] = useState<"ai" | "upload" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);

@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/shared/ComingSoon";
+import { EditPodcast } from "@/components/create/EditPodcast";
 
-export default function EditPodcastPage() {
-  return <ComingSoon title="Editar podcast" />;
+export default async function EditPodcastPage({
+  params,
+}: PageProps<"/podcasts/[podcastId]/edit">) {
+  const { podcastId } = await params;
+  return <EditPodcast podcastId={podcastId} />;
 }

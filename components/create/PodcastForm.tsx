@@ -19,6 +19,7 @@ import {
   type Thumbnail,
 } from "@/components/create/GenerateThumbnail";
 import { ScriptDialog } from "@/components/create/ScriptDialog";
+import type { PodcastDetailData } from "@/components/podcast/PodcastDetailHeader";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,9 +60,36 @@ const SELECT_TRIGGER = "h-10 w-full data-[size=default]:h-10";
 const FIELDSET = "min-w-0";
 const LEGEND = "mb-4 text-lg font-semibold tracking-tight";
 
-export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
+/** Without `podcast` it creates one; with it, it edits that podcast. */
+export function PodcastForm({
+  defaultTitle = "",
+  podcast,
+}: {
+  defaultTitle?: string;
+  podcast?: PodcastDetailData;
+}) {
   const router = useRouter();
   const createPodcast = useMutation(api.podcasts.create);
+  const updatePodcast = useMutation(api.podcasts.update);
+  const editing = podcast !== undefined;
+  // Stored values passed validation on publish, so the casts hold.
+  const defaults: PodcastFormValues = podcast
+    ? {
+        title: podcast.title,
+        description: podcast.description,
+        languageCode: podcast.languageCode as PodcastFormValues["languageCode"],
+        voiceName: podcast.voiceName as PodcastFormValues["voiceName"],
+        speakingRate: String(podcast.speakingRate),
+        script: podcast.transcript,
+      }
+    : {
+        title: defaultTitle,
+        description: "",
+        languageCode: "es-US",
+        voiceName: DEFAULT_VOICE_NAME,
+        speakingRate: String(DEFAULT_SPEAKING_RATE),
+        script: "",
+      };
   const {
     control,
     handleSubmit,
@@ -70,18 +98,28 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
   } = useForm<PodcastFormValues>({
     resolver: zodResolver(podcastFormSchema),
     mode: "onTouched",
-    defaultValues: {
-      title: defaultTitle,
-      description: "",
-      languageCode: "es-US",
-      voiceName: DEFAULT_VOICE_NAME,
-      speakingRate: String(DEFAULT_SPEAKING_RATE),
-      script: "",
-    },
+    defaultValues: defaults,
   });
 
-  const [audio, setAudio] = useState<GeneratedAudio | null>(null);
-  const [image, setImage] = useState<Thumbnail | null>(null);
+  // When editing, start from the published files (no storageId = keep them).
+  const [audio, setAudio] = useState<GeneratedAudio | null>(() =>
+    podcast?.audioUrl
+      ? {
+          url: podcast.audioUrl,
+          durationSec: podcast.audioDurationSec,
+          source: defaults,
+        }
+      : null,
+  );
+  const [image, setImage] = useState<Thumbnail | null>(() =>
+    podcast?.imageUrl
+      ? {
+          url: podcast.imageUrl,
+          source: podcast.imageSource,
+          prompt: podcast.imagePrompt,
+        }
+      : null,
+  );
   const [script, languageCode, voiceName, speakingRate] = useWatch({
     control,
     name: ["script", "languageCode", "voiceName", "speakingRate"],
@@ -90,31 +128,46 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
     audio !== null &&
     sameSource(audio.source, { script, languageCode, voiceName, speakingRate });
   const canPublish = isValid && audioReady && image !== null;
+  const action = editing ? "guardar" : "publicar";
   const publishHelp = !audioReady
-    ? "Genera el audio con el guion actual para publicar."
+    ? `Genera el audio con el guion actual para ${action}.`
     : image === null
-      ? "Agrega una portada para publicar."
+      ? `Agrega una portada para ${action}.`
       : !isValid
         ? "Revisa los campos marcados."
         : null;
 
   const onSubmit = handleSubmit(async (values) => {
     if (!audio || !audioReady || !image) return;
+    const fields = {
+      title: values.title,
+      description: values.description,
+      transcript: values.script,
+      languageCode: values.languageCode,
+      voiceName: values.voiceName,
+      speakingRate: Number(values.speakingRate),
+      imagePrompt: image.prompt,
+    };
     try {
-      await createPodcast({
-        title: values.title,
-        description: values.description,
-        transcript: values.script,
-        languageCode: values.languageCode,
-        voiceName: values.voiceName,
-        speakingRate: Number(values.speakingRate),
-        audioStorageId: audio.storageId,
-        imageStorageId: image.storageId,
-        imagePrompt: image.prompt,
-      });
-      toast.success("¡Podcast publicado!");
-      // ponytail: goes to the podcast detail once it exists (phase 9).
-      router.push("/");
+      if (podcast) {
+        await updatePodcast({
+          ...fields,
+          podcastId: podcast._id,
+          audioStorageId: audio.storageId,
+          imageStorageId: image.storageId,
+        });
+        toast.success("Cambios guardados.");
+        router.push(`/podcasts/${podcast._id}`);
+      } else {
+        if (!audio.storageId || !image.storageId) return;
+        const podcastId = await createPodcast({
+          ...fields,
+          audioStorageId: audio.storageId,
+          imageStorageId: image.storageId,
+        });
+        toast.success("¡Podcast publicado!");
+        router.push(`/podcasts/${podcastId}`);
+      }
     } catch (err) {
       toast.error(
         err instanceof ConvexError
@@ -314,7 +367,13 @@ export function PodcastForm({ defaultTitle = "" }: { defaultTitle?: string }) {
           aria-describedby={publishHelp ? "publish-help" : undefined}
         >
           {isSubmitting && <Loader2 aria-hidden className="animate-spin" />}
-          {isSubmitting ? "Publicando…" : "Publicar podcast"}
+          {editing
+            ? isSubmitting
+              ? "Guardando…"
+              : "Guardar cambios"
+            : isSubmitting
+              ? "Publicando…"
+              : "Publicar podcast"}
         </Button>
         {publishHelp && (
           <p id="publish-help" className="text-sm text-muted-foreground">

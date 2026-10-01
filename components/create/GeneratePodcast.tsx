@@ -24,7 +24,7 @@ export type AudioSource = Pick<
 >;
 
 export type GeneratedAudio = {
-  storageId: Id<"_storage">;
+  storageId?: Id<"_storage">; // undefined = the published file, unchanged
   url: string;
   durationSec: number;
   source: AudioSource;
