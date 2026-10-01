@@ -43,6 +43,7 @@ export default defineSchema({
     .index("by_author", ["authorId"])
     .index("by_views", ["views"])
     .index("by_language", ["languageCode"])
+    .index("by_image", ["imageStorageId"]) // an uploaded cover belongs to one podcast
     .searchIndex("search_text", { searchField: "searchText" }),
 
   aiGenerations: defineTable({

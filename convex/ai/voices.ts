@@ -30,4 +30,9 @@ export function voiceId(languageCode: string, voiceName: string): string {
   return `${languageCode}-Chirp3-HD-${voiceName}`;
 }
 
+/** Inverse of `voiceId`: "es-US-Chirp3-HD-Charon" → "Charon". */
+export function voiceNameOf(id: string): string {
+  return id.slice(id.lastIndexOf("-") + 1);
+}
+
 export const DEFAULT_VOICE_NAME = "Charon";
