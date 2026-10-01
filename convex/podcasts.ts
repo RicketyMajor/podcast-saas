@@ -4,7 +4,7 @@ import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { LANGUAGES, VOICES, voiceId } from "./ai/voices";
-import { getCurrentUserOrThrow } from "./lib/auth";
+import { authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
 import {
   COVER_TYPES,
   DESCRIPTION_MAX_CHARS,
@@ -181,7 +181,7 @@ export const create = mutation({
       imageSource = "upload";
     }
 
-    const authorName = user.name?.trim() || "Anónimo";
+    const authorName = authorNameOf(user);
     const podcastId = await ctx.db.insert("podcasts", {
       authorId: user._id,
       authorName,

@@ -4,6 +4,9 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 
 import type { DataModel } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
+import { authorNameOf } from "./lib/auth";
+import { normalizeSearchText } from "./lib/text";
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_NAME_LENGTH = 60;
@@ -40,10 +43,33 @@ const password = Password<DataModel>({
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [Google, password],
   callbacks: {
-    async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
-      // Phase 7 adds name/avatar propagation to the user's podcasts here.
+    async afterUserCreatedOrUpdated(genericCtx, { userId, existingUserId }) {
+      // The library types ctx with an untyped data model; ours matches it.
+      const ctx = genericCtx as unknown as MutationCtx;
       if (existingUserId === null) {
-        await ctx.db.patch(userId, { podcastCount: 0, totalViews: 0 });
+        await ctx.db.patch("users", userId, { podcastCount: 0, totalViews: 0 });
+        return;
+      }
+      // Google refreshes name and avatar on every sign-in: copy them to the
+      // denormalized fields of the user's podcasts when they changed.
+      const user = await ctx.db.get("users", userId);
+      if (user === null) return;
+      const authorName = authorNameOf(user);
+      const authorImageUrl = user.image ?? "";
+      for await (const podcast of ctx.db
+        .query("podcasts")
+        .withIndex("by_author", (q) => q.eq("authorId", userId))) {
+        if (
+          podcast.authorName === authorName &&
+          podcast.authorImageUrl === authorImageUrl
+        ) {
+          continue;
+        }
+        await ctx.db.patch("podcasts", podcast._id, {
+          authorName,
+          authorImageUrl,
+          searchText: normalizeSearchText(`${podcast.title} ${authorName}`),
+        });
       }
     },
   },

@@ -29,3 +29,8 @@ export function assertOwner(podcast: Doc<"podcasts">, user: Doc<"users">) {
     });
   }
 }
+
+/** Name shown on the user's podcasts (denormalized into `authorName`). */
+export function authorNameOf(user: Doc<"users">) {
+  return user.name?.trim() || "Anónimo";
+}
