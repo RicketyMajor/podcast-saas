@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/shared/ComingSoon";
+import { PodcastDetail } from "@/components/podcast/PodcastDetail";
 
-export default function PodcastDetailPage() {
-  return <ComingSoon title="Podcast" />;
+export default async function PodcastDetailPage({
+  params,
+}: PageProps<"/podcasts/[podcastId]">) {
+  const { podcastId } = await params;
+  return <PodcastDetail podcastId={podcastId} />;
 }
