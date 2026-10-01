@@ -12,6 +12,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { SCRIPT_MAX_CHARS, SCRIPT_MIN_CHARS } from "@/convex/lib/limits";
 import { formatCount, formatDuration } from "@/lib/utils";
+import { usePlayerStore } from "@/stores/player-store";
 import {
   podcastFormSchema,
   type PodcastFormValues,
@@ -40,7 +41,6 @@ export function sameSource(a: AudioSource, b: AudioSource) {
   );
 }
 
-// ponytail: pausing the global player on preview play lands with the player (phase 8).
 export function GeneratePodcast({
   control,
   audio,
@@ -96,6 +96,8 @@ export function GeneratePodcast({
             controls
             preload="metadata"
             src={audio.url}
+            // The only other <audio> allowed: it pauses the global player.
+            onPlay={() => usePlayerStore.getState().pause()}
             className="w-full [color-scheme:dark]"
             aria-label="Vista previa del audio"
           />
