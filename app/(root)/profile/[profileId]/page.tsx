@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/shared/ComingSoon";
+import { ProfileView } from "@/components/profile/ProfileView";
 
-export default function ProfilePage() {
-  return <ComingSoon title="Perfil" />;
+export default async function ProfilePage({
+  params,
+}: PageProps<"/profile/[profileId]">) {
+  const { profileId } = await params;
+  return <ProfileView profileId={profileId} />;
 }

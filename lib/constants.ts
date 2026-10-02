@@ -16,10 +16,6 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const EMPTY_STATES = {
-  comingSoon: {
-    title: "Próximamente",
-    description: "Estamos preparando esta sección.",
-  },
   noPodcasts: {
     title: "Aún no hay podcasts. ¡Publica el primero!",
     description: "Escribe un guion, elige una voz y la IA hace el resto.",
