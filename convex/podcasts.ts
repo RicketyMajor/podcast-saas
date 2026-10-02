@@ -85,6 +85,22 @@ export const getLatest = query({
   },
 });
 
+// searchText = normalized title + author, so a creator's name finds their
+// podcasts. The last term matches as a prefix; no typo tolerance (Convex).
+export const search = query({
+  args: { query: v.string() },
+  returns: v.array(podcastCard),
+  handler: async (ctx, args) => {
+    const query = normalizeSearchText(args.query.slice(0, 100));
+    if (query === "") return [];
+    const podcasts = await ctx.db
+      .query("podcasts")
+      .withSearchIndex("search_text", (q) => q.search("searchText", query))
+      .take(30);
+    return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
+  },
+});
+
 // Full podcast for the detail page and the edit form. Storage ids stay on the
 // server: knowing one is what would let someone reuse a file (see checkCover).
 const podcastDetail = v.object({
