@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "./_generated/server";
-import { getCurrentUser } from "./lib/auth";
+import { authorNameOf, getCurrentUser } from "./lib/auth";
 
 // Public shape: never expose email or other private fields.
 export const current = query({
@@ -26,5 +26,30 @@ export const current = query({
       podcastCount: user.podcastCount ?? 0,
       totalViews: user.totalViews ?? 0,
     };
+  },
+});
+
+export const getTopCreators = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id("users"),
+      name: v.string(),
+      image: v.optional(v.string()),
+      podcastCount: v.number(),
+    }),
+  ),
+  handler: async (ctx, { limit }) => {
+    const users = await ctx.db
+      .query("users")
+      .withIndex("by_podcast_count", (q) => q.gt("podcastCount", 0))
+      .order("desc")
+      .take(Math.min(limit ?? 5, 20));
+    return users.map((user) => ({
+      _id: user._id,
+      name: authorNameOf(user),
+      image: user.image,
+      podcastCount: user.podcastCount ?? 0,
+    }));
   },
 });
