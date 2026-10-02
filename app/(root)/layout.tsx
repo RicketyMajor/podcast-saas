@@ -1,5 +1,6 @@
 import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { RightSidebar } from "@/components/layout/RightSidebar";
 import { PlayerSpacer } from "@/components/player/PlayerSpacer";
 import { PodcastPlayer } from "@/components/player/PodcastPlayer";
 
@@ -14,11 +15,7 @@ export default function RootGroupLayout({ children }: LayoutProps<"/">) {
         </main>
         <PlayerSpacer />
       </div>
-      {/* Reserved for RightSidebar (phase 10). */}
-      <aside
-        aria-hidden
-        className="hidden w-78 shrink-0 border-l border-border xl:block"
-      />
+      <RightSidebar />
       <PodcastPlayer />
     </div>
   );
