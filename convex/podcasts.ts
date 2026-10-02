@@ -101,6 +101,20 @@ export const search = query({
   },
 });
 
+// ponytail: capped at 100, newest first; paginate when a creator gets there.
+export const getByAuthor = query({
+  args: { authorId: v.id("users") },
+  returns: v.array(podcastCard),
+  handler: async (ctx, { authorId }) => {
+    const podcasts = await ctx.db
+      .query("podcasts")
+      .withIndex("by_author", (q) => q.eq("authorId", authorId))
+      .order("desc")
+      .take(100);
+    return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
+  },
+});
+
 // Full podcast for the detail page and the edit form. Storage ids stay on the
 // server: knowing one is what would let someone reuse a file (see checkCover).
 const podcastDetail = v.object({
