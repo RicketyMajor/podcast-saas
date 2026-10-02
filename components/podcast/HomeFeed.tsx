@@ -14,8 +14,19 @@ import { PodcastGrid } from "./PodcastGrid";
 
 const PAGE_SIZE = 8;
 
-export function HomeFeed() {
-  const trending = useQuery(api.podcasts.getTrending, { limit: PAGE_SIZE });
+// Also the default /discover view, with its own titles (screens.md §2.5).
+export function HomeFeed({
+  trendingTitle = "Tendencias",
+  latestTitle = "Recientes",
+  trendingLimit = PAGE_SIZE,
+}: {
+  trendingTitle?: string;
+  latestTitle?: string;
+  trendingLimit?: number;
+}) {
+  const trending = useQuery(api.podcasts.getTrending, {
+    limit: trendingLimit,
+  });
   const latest = usePaginatedQuery(
     api.podcasts.getLatest,
     {},
@@ -43,11 +54,11 @@ export function HomeFeed() {
   return (
     <>
       <section className="flex flex-col gap-5">
-        <SectionHeader title="Tendencias" />
-        <PodcastGrid podcasts={trending} />
+        <SectionHeader title={trendingTitle} />
+        <PodcastGrid podcasts={trending} skeletons={trendingLimit} />
       </section>
       <section className="flex flex-col gap-5">
-        <SectionHeader title="Recientes" />
+        <SectionHeader title={latestTitle} />
         <PodcastGrid
           podcasts={
             latest.status === "LoadingFirstPage" ? undefined : latest.results
