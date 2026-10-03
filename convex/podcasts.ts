@@ -1,9 +1,12 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { HOUR, RateLimiter } from "@convex-dev/rate-limiter";
 import {
   paginationOptsValidator,
   paginationResultValidator,
 } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
+import { components } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   mutation,
@@ -475,14 +478,29 @@ export const remove = mutation({
   },
 });
 
-// ponytail: public and unauthenticated by design (architecture §5.6), so it can
-// be inflated; add rate limiting by user or IP if views start to matter.
+// Views are public and need no session (architecture §5.6). Convex doesn't
+// expose the caller's IP, so a signed-in listener counts once per podcast per
+// hour, and anonymous plays share a per-podcast budget.
+// ponytail: that budget still lets a script add up to 60 views/h per podcast;
+// require a session or add a captcha if views ever drive money or ranking.
+const viewLimits = new RateLimiter(components.rateLimiter, {
+  viewByUser: { kind: "fixed window", rate: 1, period: HOUR },
+  viewAnonymous: { kind: "token bucket", rate: 60, period: HOUR },
+});
+
 export const registerView = mutation({
   args: { podcastId: v.id("podcasts") },
   returns: v.null(),
   handler: async (ctx, { podcastId }) => {
     const podcast = await ctx.db.get("podcasts", podcastId);
     if (podcast === null) return null;
+    const userId = await getAuthUserId(ctx);
+    const { ok } = userId
+      ? await viewLimits.limit(ctx, "viewByUser", {
+          key: `${userId}:${podcastId}`,
+        })
+      : await viewLimits.limit(ctx, "viewAnonymous", { key: podcastId });
+    if (!ok) return null; // silently: the listener isn't doing anything wrong
     await ctx.db.patch("podcasts", podcastId, { views: podcast.views + 1 });
     const author = await ctx.db.get("users", podcast.authorId);
     if (author !== null) {
