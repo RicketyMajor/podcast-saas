@@ -55,30 +55,31 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <section
-        aria-labelledby="hero-title"
-        className="relative isolate overflow-hidden rounded-3xl ring-1 ring-foreground/8"
-      >
+      <section aria-labelledby="hero-title" className="relative">
+        {/* Unboxed: the cover's light spills edge to edge, up under the page
+            title, and fades into the ground. No `isolate` here, so -z-[5]
+            lands behind the greeting too (above the app-wide backdrop). */}
         {podcast.imageUrl && (
-          <Image
-            src={podcast.imageUrl}
-            alt=""
-            fill
-            sizes="64px"
+          <div
             aria-hidden
-            className="-z-10 scale-150 object-cover opacity-60 blur-3xl saturate-150"
-          />
+            className="pointer-events-none absolute -inset-x-4 -top-48 -bottom-24 -z-[5] overflow-hidden mask-y-from-55% mask-y-to-100% lg:-inset-x-10"
+          >
+            <Image
+              src={podcast.imageUrl}
+              alt=""
+              fill
+              sizes="64px"
+              className="scale-125 object-cover opacity-70 blur-3xl saturate-150"
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-background/80 via-background/35 to-background/10 sm:bg-linear-to-r" />
+          </div>
         )}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 bg-linear-to-t from-background/90 via-background/55 to-background/15 sm:bg-linear-to-r"
-        />
 
         <motion.div
           initial="hidden"
           animate="shown"
           transition={{ staggerChildren: 0.08, delayChildren: 0.1 }}
-          className="flex flex-col gap-6 p-5 sm:flex-row sm:items-end sm:gap-8 sm:p-8 lg:p-10"
+          className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:min-h-[44vh] lg:py-8"
         >
           <motion.div
             variants={{
@@ -89,7 +90,7 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
                 transition: { duration: 0.8, ease: EASE },
               },
             }}
-            className="w-40 shrink-0 sm:w-52 lg:w-60"
+            className="w-44 shrink-0 sm:w-56 lg:w-70"
           >
             <Link
               ref={coverRef}
@@ -105,7 +106,7 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
                   alt=""
                   fill
                   priority
-                  sizes="240px"
+                  sizes="280px"
                   className="object-cover"
                 />
               ) : (
@@ -118,7 +119,7 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
             <motion.h2
               id="hero-title"
               variants={rise}
-              className="font-display text-[clamp(2rem,4.6vw,3.75rem)] leading-[0.98] font-extrabold tracking-[-0.035em] break-words"
+              className="font-display text-[clamp(2.25rem,5.2vw,4.5rem)] leading-[0.98] font-extrabold tracking-[-0.035em] break-words"
             >
               <Link
                 href={href}
@@ -130,29 +131,33 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
             </motion.h2>
             <motion.div
               variants={rise}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground/80"
+              className="flex flex-col gap-1.5 text-sm text-foreground/80"
             >
-              <Link
-                href={`/profile/${podcast.authorId}`}
-                className="font-semibold text-foreground hover:underline"
-              >
-                {podcast.authorName}
-              </Link>
-              <AiBadge />
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <TrendingUp aria-hidden className="size-4 text-ambient" />
-                N.º 1 en tendencias
-              </span>
-              <span className="tabular-nums">
-                {formatDuration(podcast.audioDurationSec)}
-              </span>
-              {detail && (
-                <span className="flex items-center gap-1.5 tabular-nums">
-                  <Headphones aria-hidden className="size-4" />
-                  {formatCount(detail.views)}
-                  <span className="sr-only">reproducciones</span>
+              <div className="flex items-center gap-2.5">
+                <Link
+                  href={`/profile/${podcast.authorId}`}
+                  className="truncate font-semibold text-foreground hover:underline"
+                >
+                  {podcast.authorName}
+                </Link>
+                <AiBadge className="shrink-0" />
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1.5 font-medium text-foreground">
+                  <TrendingUp aria-hidden className="size-4 text-ambient" />
+                  N.º 1 en tendencias
                 </span>
-              )}
+                <span className="tabular-nums">
+                  {formatDuration(podcast.audioDurationSec)}
+                </span>
+                {detail && (
+                  <span className="flex items-center gap-1.5 tabular-nums">
+                    <Headphones aria-hidden className="size-4" />
+                    {formatCount(detail.views)}
+                    <span className="sr-only">reproducciones</span>
+                  </span>
+                )}
+              </div>
             </motion.div>
             {detail?.description && (
               <motion.p
@@ -162,10 +167,10 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
                 {detail.description}
               </motion.p>
             )}
-            <motion.div variants={rise} className="flex flex-wrap gap-3 pt-1">
+            <motion.div variants={rise} className="flex gap-3 pt-1">
               <Button
                 size="lg"
-                className="h-12 rounded-full px-7 text-base shadow-lg shadow-black/30 transition-transform active:scale-95"
+                className="h-12 flex-1 rounded-full px-7 text-base shadow-lg shadow-black/30 transition-transform active:scale-95 sm:flex-none"
                 disabled={!podcast.audioUrl}
                 onClick={togglePlay}
               >
@@ -176,7 +181,7 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-12 rounded-full border-foreground/20 bg-background/30 px-6 text-base backdrop-blur-md"
+                className="h-12 flex-1 rounded-full border-foreground/20 bg-background/30 px-6 text-base backdrop-blur-md sm:flex-none"
               >
                 <Link href={href} onClick={nameCover}>
                   Ver episodio
@@ -195,9 +200,9 @@ export function HomeHeroSkeleton() {
     <div
       aria-busy="true"
       aria-label="Cargando destacado"
-      className="flex flex-col gap-6 rounded-3xl bg-card p-5 sm:flex-row sm:items-end sm:gap-8 sm:p-8 lg:p-10"
+      className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:min-h-[44vh] lg:py-8"
     >
-      <Skeleton className="aspect-square w-40 rounded-2xl sm:w-52 lg:w-60" />
+      <Skeleton className="aspect-square w-44 rounded-2xl sm:w-56 lg:w-70" />
       <div className="flex flex-1 flex-col gap-4">
         <Skeleton className="h-12 w-3/4" />
         <Skeleton className="h-4 w-56" />

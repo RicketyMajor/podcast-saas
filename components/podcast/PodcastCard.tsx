@@ -61,33 +61,38 @@ export function PodcastCard({
     <div
       className={cn("group relative flex min-w-0 flex-col gap-3", className)}
     >
-      <div
-        ref={coverRef}
-        className="relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 shadow-black/50 ring-foreground/8 transition-[translate,box-shadow] duration-300 ease-out-expo group-hover:-translate-y-1 group-hover:shadow-xl motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
-      >
-        {podcast.imageUrl ? (
-          <Image
-            src={podcast.imageUrl}
-            alt=""
-            fill
-            sizes="(min-width: 1536px) 20vw, (min-width: 768px) 30vw, 50vw"
-            className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.05] motion-reduce:transition-none"
-          />
-        ) : (
-          <AudioLines
-            aria-hidden
-            className="absolute inset-0 m-auto size-10 text-muted-foreground"
-          />
-        )}
-        <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-background/65 px-2 py-0.5 text-xs font-medium tabular-nums backdrop-blur-md">
-          {isCurrent && (
-            <EqualizerBars playing={playing} className="h-2.5 text-ambient" />
+      {/* The lifting cover becomes a stacking context on hover, so the play
+          button lives beside it (z-10 over the stretched title link), not
+          inside it. */}
+      <div className="relative aspect-square">
+        <div
+          ref={coverRef}
+          className="absolute inset-0 overflow-hidden rounded-2xl bg-muted ring-1 shadow-black/50 ring-foreground/8 transition-[translate,box-shadow] duration-300 ease-out-expo group-hover:-translate-y-1 group-hover:shadow-xl motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+        >
+          {podcast.imageUrl ? (
+            <Image
+              src={podcast.imageUrl}
+              alt=""
+              fill
+              sizes="(min-width: 1536px) 20vw, (min-width: 768px) 30vw, 50vw"
+              className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.05] motion-reduce:transition-none"
+            />
+          ) : (
+            <AudioLines
+              aria-hidden
+              className="absolute inset-0 m-auto size-10 text-muted-foreground"
+            />
           )}
-          {formatDuration(podcast.audioDurationSec)}
-        </span>
+          <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-background/65 px-2 py-0.5 text-xs font-medium tabular-nums backdrop-blur-md">
+            {isCurrent && (
+              <EqualizerBars playing={playing} className="h-2.5 text-ambient" />
+            )}
+            {formatDuration(podcast.audioDurationSec)}
+          </span>
+        </div>
         {podcast.audioUrl && (
           <CardPlayButton
-            className="absolute right-2 bottom-2 z-10"
+            className="absolute right-2 bottom-2 z-10 group-hover:-translate-y-1"
             track={{
               podcastId: podcast._id,
               title: podcast.title,

@@ -18,7 +18,8 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 
 export function FeaturedCarousel() {
-  const featured = useQuery(api.podcasts.getTrending, { limit: 5 });
+  // #1 already leads Home as the hero; the rail features the next five.
+  const featured = useQuery(api.podcasts.getTrending, { limit: 6 })?.slice(1);
   const [carousel, setCarousel] = useState<CarouselApi>();
   const [selected, setSelected] = useState(0);
 
@@ -42,7 +43,7 @@ export function FeaturedCarousel() {
       {featured === undefined ? (
         <Skeleton
           aria-label="Cargando destacados"
-          className="aspect-square w-full rounded-xl"
+          className="aspect-square w-full max-w-48 rounded-2xl"
         />
       ) : (
         <Carousel
@@ -61,13 +62,13 @@ export function FeaturedCarousel() {
                   href={`/podcasts/${podcast._id}`}
                   className="group flex flex-col gap-2 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/8">
+                  <div className="relative aspect-square w-full max-w-48 overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/8">
                     {podcast.imageUrl ? (
                       <Image
                         src={podcast.imageUrl}
                         alt=""
                         fill
-                        sizes="280px"
+                        sizes="192px"
                         className="object-cover"
                       />
                     ) : (

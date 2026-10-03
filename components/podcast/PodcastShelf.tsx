@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,24 @@ export function PodcastShelf({
   podcasts: PodcastCardData[] | undefined;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
+  // Arrows reflect what's actually scrollable: disabled at each end.
+  const [edges, setEdges] = useState({ start: true, end: true });
+  const measure = () => {
+    const list = listRef.current;
+    if (!list) return;
+    setEdges({
+      start: list.scrollLeft <= 1,
+      end: list.scrollLeft + list.clientWidth >= list.scrollWidth - 1,
+    });
+  };
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [podcasts]);
   const scroll = (dir: 1 | -1) => {
     const list = listRef.current;
     list?.scrollBy({ left: dir * list.clientWidth * 0.8, behavior: "smooth" });
@@ -40,6 +58,7 @@ export function PodcastShelf({
             size="icon"
             className="size-10 rounded-full"
             aria-label={`Desplazar ${title} a la izquierda`}
+            disabled={edges.start}
             onClick={() => scroll(-1)}
           >
             <ChevronLeft aria-hidden />
@@ -49,6 +68,7 @@ export function PodcastShelf({
             size="icon"
             className="size-10 rounded-full"
             aria-label={`Desplazar ${title} a la derecha`}
+            disabled={edges.end}
             onClick={() => scroll(1)}
           >
             <ChevronRight aria-hidden />
@@ -72,6 +92,7 @@ export function PodcastShelf({
         // Negative margin + padding: hover lift and focus rings aren't clipped.
         <ul
           ref={listRef}
+          onScroll={measure}
           className="-mx-4 -my-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-4 overflow-x-auto overscroll-x-contain px-4 py-3 lg:-mx-10 lg:scroll-px-10 lg:px-10"
         >
           {podcasts.map((podcast, i) => (

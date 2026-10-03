@@ -81,12 +81,12 @@ export function NowPlaying({
                 fill
                 sizes="64px"
                 aria-hidden
-                className="scale-150 object-cover opacity-50 blur-3xl saturate-150"
+                className="scale-125 object-cover opacity-75 blur-3xl saturate-150"
               />
             )}
             <div
               aria-hidden
-              className="absolute inset-0 bg-linear-to-b from-background/30 via-background/70 to-background"
+              className="absolute inset-0 bg-linear-to-b from-background/35 via-background/45 to-background/75"
             />
 
             <div className="relative flex items-center justify-between gap-4 px-4 pt-4 sm:px-8 sm:pt-6">
@@ -105,7 +105,7 @@ export function NowPlaying({
                 aria-hidden
                 tabIndex={-1}
                 onPointerDown={(e) => drag.start(e)}
-                className="h-1.5 w-12 cursor-grab touch-none rounded-full bg-foreground/25 active:cursor-grabbing"
+                className="h-1.5 w-12 cursor-grab touch-none rounded-full bg-foreground/25 active:cursor-grabbing md:invisible"
               />
               <Button
                 asChild

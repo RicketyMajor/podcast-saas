@@ -28,7 +28,7 @@ export function CardPlayButton({
         "size-11 rounded-full shadow-lg shadow-black/40 transition-[opacity,translate,scale] duration-300 ease-out-expo active:scale-95",
         // Rises in on hover or focus; always visible on touch and while playing.
         !playing &&
-          "translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 motion-reduce:translate-y-0 pointer-coarse:translate-y-0 pointer-coarse:opacity-100",
+          "translate-y-2 opacity-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 motion-reduce:translate-y-0 pointer-coarse:translate-y-0 pointer-coarse:opacity-100",
         className,
       )}
     >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Home, Radio, SearchX } from "lucide-react";
+import { ChevronRight, Home, Radio, SearchX } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -34,7 +34,11 @@ export function PodcastDetail({ podcastId }: { podcastId: string }) {
       <TranscriptView transcript={podcast.transcript} />
       {podcast.imageSource === "ai" && podcast.imagePrompt && (
         <details className="group max-w-prose text-sm text-muted-foreground">
-          <summary className="cursor-pointer rounded-sm font-medium hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm font-medium hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+            <ChevronRight
+              aria-hidden
+              className="size-4 transition-transform duration-300 ease-out-expo group-open:rotate-90"
+            />
             Prompt de la portada
           </summary>
           <p className="mt-2 text-pretty">{podcast.imagePrompt}</p>

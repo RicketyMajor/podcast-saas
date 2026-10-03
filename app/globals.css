@@ -159,6 +159,13 @@
   }
 }
 
+/* Ambient light drift while playing (transform only: composited). */
+@keyframes ambient-drift {
+  50% {
+    transform: translate3d(5%, 4%, 0) scale(1.08);
+  }
+}
+
 /* Route changes crossfade with a short rise (React <ViewTransition>). */
 ::view-transition-old(.page) {
   animation: 120ms ease-out both vt-fade reverse;

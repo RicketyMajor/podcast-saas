@@ -39,10 +39,13 @@ export function AmbientBackdrop() {
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none fixed inset-0 -z-10 transition-opacity duration-700 ease-out",
-        "bg-[radial-gradient(90%_55%_at_30%_-12%,color-mix(in_oklch,var(--ambient)_24%,transparent),transparent_72%),radial-gradient(60%_40%_at_100%_110%,color-mix(in_oklch,var(--ambient)_12%,transparent),transparent_70%)]",
-        // Brighter while something plays: the light follows the sound.
-        isPlaying ? "opacity-100" : "opacity-60",
+        "pointer-events-none fixed -inset-[10%] -z-10 transition-opacity duration-1000 ease-out",
+        "bg-[radial-gradient(140%_70%_at_25%_-5%,color-mix(in_oklch,var(--ambient)_34%,transparent),transparent_70%),radial-gradient(90%_60%_at_95%_105%,color-mix(in_oklch,var(--ambient)_20%,transparent),transparent_70%)]",
+        // The light follows the sound: brighter, and slowly breathing, while
+        // something plays (the drift stops under reduced motion).
+        isPlaying
+          ? "opacity-100 motion-safe:animate-[ambient-drift_24s_ease-in-out_infinite]"
+          : "opacity-45",
       )}
     />
   );
