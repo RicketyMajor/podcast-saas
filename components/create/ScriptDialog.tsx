@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
 
+import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -187,7 +188,13 @@ export function ScriptDialog({
             </p>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="items-center">
+            <p
+              aria-live="polite"
+              className="text-sm text-muted-foreground sm:mr-auto"
+            >
+              <QuotaNote kind="script" />
+            </p>
             <Button type="submit" className="h-10" disabled={pending}>
               {pending && <Loader2 aria-hidden className="animate-spin" />}
               {pending

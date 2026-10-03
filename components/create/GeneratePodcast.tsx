@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
 
+import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -154,11 +155,13 @@ export function GeneratePodcast({
           {pending ? "Generando audio…" : audio ? "Regenerar" : "Generar audio"}
         </Button>
         <p aria-live="polite" className="text-sm text-muted-foreground">
-          {pending
-            ? "Puede tardar hasta un minuto."
-            : !canGenerate
-              ? `Escribe un guion de ${formatCount(SCRIPT_MIN_CHARS)} a ${formatCount(SCRIPT_MAX_CHARS)} caracteres para generar el audio.`
-              : null}
+          {pending ? (
+            "Puede tardar hasta un minuto."
+          ) : !canGenerate ? (
+            `Escribe un guion de ${formatCount(SCRIPT_MIN_CHARS)} a ${formatCount(SCRIPT_MAX_CHARS)} caracteres para generar el audio.`
+          ) : (
+            <QuotaNote kind="audio" />
+          )}
         </p>
       </div>
     </div>

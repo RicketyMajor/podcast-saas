@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState, type DragEvent } from "react";
 import { toast } from "sonner";
 
+import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -182,11 +183,13 @@ export function GenerateThumbnail({
                   : "Generar portada"}
             </Button>
             <p aria-live="polite" className="text-sm text-muted-foreground">
-              {pending === "ai"
-                ? "Tarda unos segundos."
-                : !canGenerate
-                  ? `Escribe al menos ${IMAGE_PROMPT_MIN_CHARS} caracteres (máximo ${formatCount(IMAGE_PROMPT_MAX_CHARS)}).`
-                  : null}
+              {pending === "ai" ? (
+                "Tarda unos segundos."
+              ) : !canGenerate ? (
+                `Escribe al menos ${IMAGE_PROMPT_MIN_CHARS} caracteres (máximo ${formatCount(IMAGE_PROMPT_MAX_CHARS)}).`
+              ) : (
+                <QuotaNote kind="image" />
+              )}
             </p>
           </div>
         </TabsContent>

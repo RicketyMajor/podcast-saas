@@ -1,7 +1,8 @@
 import { ConvexError, v } from "convex/values";
 
 import type { Id } from "../_generated/dataModel";
-import { internalMutation } from "../_generated/server";
+import { internalMutation, query, type QueryCtx } from "../_generated/server";
+import { getCurrentUser } from "../lib/auth";
 import {
   DAILY_AUDIO_GENERATIONS,
   DAILY_IMAGE_GENERATIONS,
@@ -23,6 +24,44 @@ const kind = v.union(
   v.literal("script"),
 );
 
+type Kind = keyof typeof DAILY_LIMITS;
+
+/** Generations that count against the daily quota (failures don't). */
+async function usedLastDay(ctx: QueryCtx, userId: Id<"users">) {
+  const used: Record<Kind, number> = { audio: 0, image: 0, script: 0 };
+  // Bounded by the daily limits themselves (plus failures), so this stays small.
+  for await (const g of ctx.db
+    .query("aiGenerations")
+    .withIndex("by_user", (q) =>
+      q.eq("userId", userId).gt("_creationTime", Date.now() - DAY_MS),
+    )) {
+    if (g.status !== "error") used[g.kind]++;
+  }
+  return used;
+}
+
+const remaining = v.object({ remaining: v.number(), limit: v.number() });
+
+// ponytail: a query only re-runs when its data changes, so quota freed by the
+// 24 h window passing shows up on the next generation or page load.
+export const getRemaining = query({
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({ audio: remaining, image: remaining, script: remaining }),
+  ),
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (user === null) return null;
+    const used = await usedLastDay(ctx, user._id);
+    const of = (k: Kind) => ({
+      remaining: Math.max(DAILY_LIMITS[k] - used[k], 0),
+      limit: DAILY_LIMITS[k],
+    });
+    return { audio: of("audio"), image: of("image"), script: of("script") };
+  },
+});
+
 /**
  * Checks quotas and reserves one generation in a single transaction, so two
  * concurrent requests can't both slip under the limit. Failed generations
@@ -41,16 +80,8 @@ export const reserveGeneration = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    // Bounded by the daily limit itself (plus failures), so this stays small.
-    let usedToday = 0;
-    for await (const g of ctx.db
-      .query("aiGenerations")
-      .withIndex("by_user", (q) =>
-        q.eq("userId", args.userId).gt("_creationTime", now - DAY_MS),
-      )) {
-      if (g.kind === args.kind && g.status !== "error") usedToday++;
-    }
-    if (usedToday >= DAILY_LIMITS[args.kind]) {
+    const used = await usedLastDay(ctx, args.userId);
+    if (used[args.kind] >= DAILY_LIMITS[args.kind]) {
       throw new ConvexError({
         code: "QUOTA_EXCEEDED",
         message: "Alcanzaste el límite diario de generaciones. Vuelve mañana.",
