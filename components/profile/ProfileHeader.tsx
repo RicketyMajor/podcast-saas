@@ -98,7 +98,10 @@ export function ProfileHeader({
           {(profile.podcastCount > 0 || isOwner) && (
             <div className="flex flex-wrap justify-center gap-3 pt-1">
               {profile.podcastCount > 0 && (
-                <PillButton disabled={playable.length === 0} onClick={playRandom}>
+                <PillButton
+                  disabled={playable.length === 0}
+                  onClick={playRandom}
+                >
                   <Shuffle aria-hidden />
                   Reproducir aleatorio
                 </PillButton>

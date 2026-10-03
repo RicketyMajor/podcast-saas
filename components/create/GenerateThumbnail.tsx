@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState, type DragEvent } from "react";
 import { toast } from "sonner";
 
+import { GenerationProgress } from "@/components/create/GenerationProgress";
 import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -115,17 +116,19 @@ export function GenerateThumbnail({
   }
 
   return (
-    <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-4 sm:p-6">
+    <div className="flex flex-col gap-5 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/8 sm:p-6">
       {image && (
         // ponytail: unoptimized, it's a one-off preview (and blob: URLs can't be optimized).
         <Image
+          key={image.url}
           src={image.url}
           alt="Vista previa de la portada"
           width={1024}
           height={1024}
           unoptimized
           loading="eager"
-          className="aspect-square w-full max-w-64 rounded-xl border border-border object-cover"
+          // A new cover develops in from a blur, like a print.
+          className="aspect-square w-full max-w-64 rounded-2xl object-cover shadow-2xl ring-1 shadow-black/60 ring-foreground/10 motion-safe:animate-in motion-safe:duration-700 motion-safe:zoom-in-95 motion-safe:blur-in"
         />
       )}
 
@@ -161,11 +164,11 @@ export function GenerateThumbnail({
               aparte.
             </FieldDescription>
           </Field>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               type="button"
               variant={image?.source === "ai" ? "outline" : "default"}
-              className="h-10"
+              className="h-11 rounded-full px-5 transition-transform active:scale-95"
               disabled={!canGenerate || pending !== null}
               onClick={handleGenerate}
             >
@@ -182,16 +185,26 @@ export function GenerateThumbnail({
                   ? "Regenerar"
                   : "Generar portada"}
             </Button>
-            <p aria-live="polite" className="text-sm text-muted-foreground">
-              {pending === "ai" ? (
-                "Tarda unos segundos."
-              ) : !canGenerate ? (
-                `Escribe al menos ${IMAGE_PROMPT_MIN_CHARS} caracteres (máximo ${formatCount(IMAGE_PROMPT_MAX_CHARS)}).`
-              ) : (
-                <QuotaNote kind="image" />
-              )}
-            </p>
+            {pending !== "ai" && (
+              <p className="text-sm text-muted-foreground">
+                {!canGenerate ? (
+                  `Escribe al menos ${IMAGE_PROMPT_MIN_CHARS} caracteres (máximo ${formatCount(IMAGE_PROMPT_MAX_CHARS)}).`
+                ) : (
+                  <QuotaNote kind="image" />
+                )}
+              </p>
+            )}
           </div>
+          {pending === "ai" && (
+            <GenerationProgress
+              estimateMs={4000}
+              phases={[
+                "Imaginando la escena…",
+                "Pintando la portada…",
+                "Últimos retoques…",
+              ]}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="upload">

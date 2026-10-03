@@ -167,6 +167,16 @@
   }
 }
 
+/* Generation progress: a sheen crossing the track while waiting. */
+@keyframes sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
 /* Auth cover wall: each column scrolls by one of its two copies. */
 @keyframes wall-drift {
   to {

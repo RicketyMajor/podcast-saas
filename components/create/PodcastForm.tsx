@@ -18,10 +18,11 @@ import {
   GenerateThumbnail,
   type Thumbnail,
 } from "@/components/create/GenerateThumbnail";
+import { CreateStages, type Stage } from "@/components/create/CreateStages";
 import { ScriptDialog } from "@/components/create/ScriptDialog";
 import type { PodcastDetailData } from "@/components/podcast/PodcastDetailHeader";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import {
   Field,
   FieldDescription,
@@ -54,12 +55,18 @@ import {
   podcastFormSchema,
   type PodcastFormValues,
 } from "@/lib/validations/podcast";
+import { usePageCover } from "@/stores/ambient-store";
 
-const CONTROL = "h-10";
-const SELECT_TRIGGER = "h-10 w-full data-[size=default]:h-10";
+const CONTROL = "h-11";
+const SELECT_TRIGGER = "h-11 w-full data-[size=default]:h-11";
 // Fieldsets default to min-width: min-content; long unbroken text would overflow.
 const FIELDSET = "min-w-0";
-const LEGEND = "mb-4 text-lg font-semibold tracking-tight";
+const LEGEND =
+  // data-[variant=legend]: beats shadcn's own legend size without editing ui/.
+  "mb-5 font-display text-[1.375rem] font-bold tracking-[-0.025em] data-[variant=legend]:text-[1.375rem]";
+// A stage the rail scrolls to: clears the sticky rail and takes focus.
+const STAGE =
+  "flex scroll-mt-40 flex-col gap-10 outline-none sm:scroll-mt-32 lg:scroll-mt-24";
 
 /** Without `podcast` it creates one; with it, it edits that podcast. */
 export function PodcastForm({
@@ -121,14 +128,49 @@ export function PodcastForm({
         }
       : null,
   );
-  const [script, languageCode, voiceName, speakingRate] = useWatch({
-    control,
-    name: ["script", "languageCode", "voiceName", "speakingRate"],
-  });
+  const [title, description, script, languageCode, voiceName, speakingRate] =
+    useWatch({
+      control,
+      name: [
+        "title",
+        "description",
+        "script",
+        "languageCode",
+        "voiceName",
+        "speakingRate",
+      ],
+    });
   const audioReady =
     audio !== null &&
     sameSource(audio.source, { script, languageCode, voiceName, speakingRate });
   const canPublish = isValid && audioReady && image !== null;
+  // The cover you make lights the room, like a playing one would.
+  usePageCover(image?.url);
+
+  const { shape } = podcastFormSchema;
+  const stages: Stage[] = [
+    {
+      target: "stage-script",
+      label: "Guion",
+      status:
+        shape.title.safeParse(title).success &&
+        shape.description.safeParse(description).success &&
+        shape.script.safeParse(script).success
+          ? "done"
+          : "todo",
+    },
+    {
+      target: "stage-voice",
+      label: "Voz",
+      status: audioReady ? "done" : audio ? "stale" : "todo",
+    },
+    {
+      target: "stage-cover",
+      label: "Portada",
+      status: image ? "done" : "todo",
+    },
+    { target: "stage-publish", label: "Publicar", status: "todo" },
+  ];
   const action = editing ? "guardar" : "publicar";
   const publishHelp = !audioReady
     ? `Genera el audio con el guion actual para ${action}.`
@@ -188,47 +230,54 @@ export function PodcastForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-10">
-      <FieldSet className={FIELDSET}>
-        <FieldLegend className={LEGEND}>Detalles</FieldLegend>
-        <FieldGroup>
-          <Controller
-            name="title"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="title">Título</FieldLabel>
-                <Input
-                  {...field}
-                  id="title"
-                  autoComplete="off"
-                  aria-invalid={fieldState.invalid}
-                  className={CONTROL}
-                />
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="description"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="description">Descripción</FieldLabel>
-                <Textarea
-                  {...field}
-                  id="description"
-                  rows={3}
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby="description-help"
-                />
-                <FieldDescription id="description-help">
-                  De qué trata el episodio, en una o dos frases.
-                </FieldDescription>
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
-          />
-          <div className="grid gap-5 sm:grid-cols-2">
+      <CreateStages stages={stages} />
+
+      <section
+        id="stage-script"
+        tabIndex={-1}
+        aria-label="Guion"
+        className={STAGE}
+      >
+        <FieldSet className={FIELDSET}>
+          <FieldLegend className={LEGEND}>Detalles</FieldLegend>
+          <FieldGroup>
+            <Controller
+              name="title"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="title">Título</FieldLabel>
+                  <Input
+                    {...field}
+                    id="title"
+                    autoComplete="off"
+                    aria-invalid={fieldState.invalid}
+                    className={CONTROL}
+                  />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+            <Controller
+              name="description"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="description">Descripción</FieldLabel>
+                  <Textarea
+                    {...field}
+                    id="description"
+                    rows={3}
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby="description-help"
+                  />
+                  <FieldDescription id="description-help">
+                    De qué trata el episodio, en una o dos frases.
+                  </FieldDescription>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
             <Controller
               name="languageCode"
               control={control}
@@ -240,6 +289,7 @@ export function PodcastForm({
                       id="languageCode"
                       onBlur={field.onBlur}
                       aria-invalid={fieldState.invalid}
+                      aria-describedby="languageCode-help"
                       className={SELECT_TRIGGER}
                     >
                       <SelectValue placeholder="Elige un idioma" />
@@ -252,126 +302,153 @@ export function PodcastForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FieldDescription id="languageCode-help">
+                    El guion con IA y las voces disponibles siguen este idioma.
+                  </FieldDescription>
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
             />
-            <Controller
-              name="speakingRate"
+          </FieldGroup>
+        </FieldSet>
+
+        <FieldSet className={FIELDSET}>
+          <FieldLegend className={LEGEND}>Guion</FieldLegend>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Escríbelo tú o pide un borrador a la IA.
+            </p>
+            <ScriptDialog
               control={control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="speakingRate">Velocidad</FieldLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      id="speakingRate"
-                      onBlur={field.onBlur}
-                      aria-invalid={fieldState.invalid}
-                      className={SELECT_TRIGGER}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPEAKING_RATES.map((rate) => (
-                        <SelectItem key={rate} value={String(rate)}>
-                          {SPEAKING_RATE_LABELS[rate]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FieldError errors={[fieldState.error]} />
-                </Field>
-              )}
+              onGenerated={(script) =>
+                setValue("script", script, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                  shouldValidate: true,
+                })
+              }
             />
           </div>
           <Controller
-            name="voiceName"
+            name="script"
             control={control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="voiceName">Voz</FieldLabel>
-                <VoiceSelect
-                  id="voiceName"
-                  value={field.value}
-                  languageCode={languageCode}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  invalid={fieldState.invalid}
-                />
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
+            render={({ field, fieldState }) => {
+              const length = field.value.length;
+              return (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="script">
+                    Texto que leerá la voz
+                  </FieldLabel>
+                  <Textarea
+                    {...field}
+                    id="script"
+                    rows={12}
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby="script-count"
+                    className="min-h-64"
+                  />
+                  <FieldDescription
+                    id="script-count"
+                    className={cn(
+                      "text-right tabular-nums",
+                      length > SCRIPT_MAX_CHARS && "text-destructive",
+                    )}
+                  >
+                    {formatCount(length)} / {formatCount(SCRIPT_MAX_CHARS)}
+                  </FieldDescription>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              );
+            }}
           />
-        </FieldGroup>
-      </FieldSet>
+        </FieldSet>
+      </section>
 
-      <FieldSet className={FIELDSET}>
-        <FieldLegend className={LEGEND}>Guion</FieldLegend>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Escríbelo tú o pide un borrador a la IA.
-          </p>
-          <ScriptDialog
-            control={control}
-            onGenerated={(script) =>
-              setValue("script", script, {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-              })
-            }
-          />
-        </div>
-        <Controller
-          name="script"
-          control={control}
-          render={({ field, fieldState }) => {
-            const length = field.value.length;
-            return (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="script">Texto que leerá la voz</FieldLabel>
-                <Textarea
-                  {...field}
-                  id="script"
-                  rows={12}
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby="script-count"
-                  className="min-h-64"
-                />
-                <FieldDescription
-                  id="script-count"
-                  className={cn(
-                    "text-right tabular-nums",
-                    length > SCRIPT_MAX_CHARS && "text-destructive",
-                  )}
-                >
-                  {formatCount(length)} / {formatCount(SCRIPT_MAX_CHARS)}
-                </FieldDescription>
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            );
-          }}
-        />
-      </FieldSet>
+      <section
+        id="stage-voice"
+        tabIndex={-1}
+        aria-label="Voz"
+        className={STAGE}
+      >
+        <FieldSet className={FIELDSET}>
+          <FieldLegend className={LEGEND}>Voz y audio</FieldLegend>
+          <FieldGroup>
+            <div className="grid gap-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <Controller
+                name="voiceName"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="voiceName">Voz</FieldLabel>
+                    <VoiceSelect
+                      id="voiceName"
+                      value={field.value}
+                      languageCode={languageCode}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      invalid={fieldState.invalid}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+              <Controller
+                name="speakingRate"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="speakingRate">Velocidad</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="speakingRate"
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        className={SELECT_TRIGGER}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPEAKING_RATES.map((rate) => (
+                          <SelectItem key={rate} value={String(rate)}>
+                            {SPEAKING_RATE_LABELS[rate]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+            </div>
+            <GeneratePodcast
+              control={control}
+              audio={audio}
+              onAudioChange={setAudio}
+            />
+          </FieldGroup>
+        </FieldSet>
+      </section>
 
-      <FieldSet className={FIELDSET}>
-        <FieldLegend className={LEGEND}>Audio</FieldLegend>
-        <GeneratePodcast
-          control={control}
-          audio={audio}
-          onAudioChange={setAudio}
-        />
-      </FieldSet>
+      <section
+        id="stage-cover"
+        tabIndex={-1}
+        aria-label="Portada"
+        className={STAGE}
+      >
+        <FieldSet className={FIELDSET}>
+          <FieldLegend className={LEGEND}>Portada</FieldLegend>
+          <GenerateThumbnail image={image} onImageChange={setImage} />
+        </FieldSet>
+      </section>
 
-      <FieldSet className={FIELDSET}>
-        <FieldLegend className={LEGEND}>Portada</FieldLegend>
-        <GenerateThumbnail image={image} onImageChange={setImage} />
-      </FieldSet>
-
-      <div className="flex flex-col items-stretch gap-2 sm:items-end">
-        <Button
+      <section
+        id="stage-publish"
+        tabIndex={-1}
+        aria-label="Publicar"
+        className="flex scroll-mt-40 flex-col items-stretch gap-3 border-t border-foreground/8 pt-8 outline-none sm:scroll-mt-32 sm:items-end lg:scroll-mt-24"
+      >
+        <PillButton
           type="submit"
-          size="lg"
           disabled={!canPublish || isSubmitting}
           aria-describedby={publishHelp ? "publish-help" : undefined}
         >
@@ -383,13 +460,13 @@ export function PodcastForm({
             : isSubmitting
               ? "Publicando…"
               : "Publicar podcast"}
-        </Button>
+        </PillButton>
         {publishHelp && (
           <p id="publish-help" className="text-sm text-muted-foreground">
             {publishHelp}
           </p>
         )}
-      </div>
+      </section>
     </form>
   );
 }

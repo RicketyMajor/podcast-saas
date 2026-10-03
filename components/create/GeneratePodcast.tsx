@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
 
+import { GenerationProgress } from "@/components/create/GenerationProgress";
 import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
@@ -32,6 +33,10 @@ export type GeneratedAudio = {
 };
 
 const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
+
+// ponytail: rough fit of TTS time vs. script length (~1 min of speech ≈
+// 900 chars ≈ 15 s); tune it if real generations drift from the estimate.
+const audioEstimateMs = (chars: number) => 4000 + chars * 12;
 
 export function sameSource(a: AudioSource, b: AudioSource) {
   return (
@@ -90,7 +95,7 @@ export function GeneratePodcast({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:p-6">
+    <div className="flex flex-col gap-4 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/8 sm:p-6">
       {audio ? (
         <div className="flex flex-col gap-3">
           <audio
@@ -137,11 +142,11 @@ export function GeneratePodcast({
         </p>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button
           type="button"
           variant={audio && !stale ? "outline" : "default"}
-          className="h-10"
+          className="h-11 rounded-full px-5 transition-transform active:scale-95"
           disabled={!canGenerate || pending}
           onClick={handleGenerate}
         >
@@ -154,16 +159,27 @@ export function GeneratePodcast({
           )}
           {pending ? "Generando audio…" : audio ? "Regenerar" : "Generar audio"}
         </Button>
-        <p aria-live="polite" className="text-sm text-muted-foreground">
-          {pending ? (
-            "Puede tardar hasta un minuto."
-          ) : !canGenerate ? (
-            `Escribe un guion de ${formatCount(SCRIPT_MIN_CHARS)} a ${formatCount(SCRIPT_MAX_CHARS)} caracteres para generar el audio.`
-          ) : (
-            <QuotaNote kind="audio" />
-          )}
-        </p>
+        {!pending && (
+          <p className="text-sm text-muted-foreground">
+            {!canGenerate ? (
+              `Escribe un guion de ${formatCount(SCRIPT_MIN_CHARS)} a ${formatCount(SCRIPT_MAX_CHARS)} caracteres para generar el audio.`
+            ) : (
+              <QuotaNote kind="audio" />
+            )}
+          </p>
+        )}
       </div>
+      {pending && (
+        <GenerationProgress
+          estimateMs={audioEstimateMs(script.trim().length)}
+          phases={[
+            "Leyendo el guion…",
+            "Dando voz a tu guion…",
+            "Uniendo las partes del audio…",
+            "Últimos retoques…",
+          ]}
+        />
+      )}
     </div>
   );
 }

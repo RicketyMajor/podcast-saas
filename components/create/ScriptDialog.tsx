@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
 
+import { GenerationProgress } from "@/components/create/GenerationProgress";
 import { QuotaNote } from "@/components/create/QuotaNote";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,7 +110,11 @@ export function ScriptDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="h-10">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 rounded-full px-5 transition-transform active:scale-95"
+        >
           <Sparkles aria-hidden />
           Generar guion con IA
         </Button>
@@ -188,6 +193,17 @@ export function ScriptDialog({
             </p>
           )}
 
+          {pending && (
+            <GenerationProgress
+              estimateMs={4000 + Number(minutes) * 2500}
+              phases={[
+                "Investigando el tema…",
+                "Escribiendo el guion…",
+                "Puliendo el texto…",
+              ]}
+            />
+          )}
+
           <DialogFooter className="items-center">
             <p
               aria-live="polite"
@@ -195,7 +211,11 @@ export function ScriptDialog({
             >
               <QuotaNote kind="script" />
             </p>
-            <Button type="submit" className="h-10" disabled={pending}>
+            <Button
+              type="submit"
+              className="h-11 rounded-full px-5 transition-transform active:scale-95"
+              disabled={pending}
+            >
               {pending && <Loader2 aria-hidden className="animate-spin" />}
               {pending
                 ? "Escribiendo guion…"
