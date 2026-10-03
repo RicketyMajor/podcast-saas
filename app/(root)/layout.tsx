@@ -1,3 +1,4 @@
+import { ConnectionBanner } from "@/components/layout/ConnectionBanner";
 import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { RightSidebar } from "@/components/layout/RightSidebar";
@@ -10,6 +11,7 @@ export default function RootGroupLayout({ children }: LayoutProps<"/">) {
       <LeftSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav />
+        <ConnectionBanner />
         <main className="flex flex-1 flex-col px-4 py-8 lg:px-10 lg:py-10">
           {children}
         </main>
