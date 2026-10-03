@@ -10,7 +10,6 @@ import { useRef } from "react";
 import { PlayPauseIcon } from "@/components/player/PlayPauseIcon";
 import { AiBadge } from "@/components/shared/AiBadge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { formatCount, formatDuration } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
@@ -69,6 +68,9 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
               alt=""
               fill
               sizes="64px"
+              // The blurred glow is the largest paint: fetch it first.
+              loading="eager"
+              fetchPriority="high"
               className="scale-125 object-cover opacity-70 blur-3xl saturate-150"
             />
             <div className="absolute inset-0 bg-linear-to-t from-background/80 via-background/35 to-background/10 sm:bg-linear-to-r" />
@@ -192,22 +194,5 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
         </motion.div>
       </section>
     </MotionConfig>
-  );
-}
-
-export function HomeHeroSkeleton() {
-  return (
-    <div
-      aria-busy="true"
-      aria-label="Cargando destacado"
-      className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:py-6"
-    >
-      <Skeleton className="aspect-square w-44 rounded-2xl sm:w-56 lg:w-70" />
-      <div className="flex flex-1 flex-col gap-4">
-        <Skeleton className="h-12 w-3/4" />
-        <Skeleton className="h-4 w-56" />
-        <Skeleton className="h-12 w-40 rounded-full" />
-      </div>
-    </div>
   );
 }

@@ -102,6 +102,9 @@ export function PodcastDetailHeader({
               alt=""
               fill
               sizes="64px"
+              // The blurred glow is the largest paint: fetch it first.
+              loading="eager"
+              fetchPriority="high"
               className="scale-150 object-cover opacity-55 blur-3xl saturate-150"
             />
           </div>

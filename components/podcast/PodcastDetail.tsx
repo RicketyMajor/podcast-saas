@@ -1,13 +1,12 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { usePreloadedQuery, useQuery, type Preloaded } from "convex/react";
 import { ChevronRight, Home, Radio, SearchX } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PillButton } from "@/components/shared/PillButton";
-import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -15,11 +14,15 @@ import { PodcastDetailHeader } from "./PodcastDetailHeader";
 import { PodcastGrid } from "./PodcastGrid";
 import { TranscriptView } from "./TranscriptView";
 
-export function PodcastDetail({ podcastId }: { podcastId: string }) {
-  const podcast = useQuery(api.podcasts.getById, { podcastId });
+export function PodcastDetail({
+  preloadedPodcast,
+}: {
+  /** Loaded on the server, so the header (the LCP) ships in the HTML. */
+  preloadedPodcast: Preloaded<typeof api.podcasts.getById>;
+}) {
+  const podcast = usePreloadedQuery(preloadedPodcast);
   const me = useQuery(api.users.current);
 
-  if (podcast === undefined) return <DetailSkeleton />;
   if (podcast === null) return <PodcastNotFound />;
 
   return (
@@ -77,24 +80,5 @@ export function PodcastNotFound() {
         </PillButton>
       }
     />
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div
-      className="flex flex-col gap-6 sm:flex-row sm:items-end"
-      aria-busy="true"
-      aria-label="Cargando podcast"
-    >
-      <Skeleton className="aspect-square w-full max-w-64 self-center rounded-2xl sm:w-56 sm:self-auto lg:w-64" />
-      <div className="flex flex-1 flex-col gap-4">
-        <Skeleton className="h-5 w-12" />
-        <Skeleton className="h-14 w-3/4" />
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-4 w-56" />
-        <Skeleton className="h-12 w-40 rounded-full" />
-      </div>
-    </div>
   );
 }

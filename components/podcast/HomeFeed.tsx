@@ -1,6 +1,10 @@
 "use client";
 
-import { usePaginatedQuery, useQuery } from "convex/react";
+import {
+  usePaginatedQuery,
+  usePreloadedQuery,
+  type Preloaded,
+} from "convex/react";
 import { Loader2, Mic, Radio } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +14,7 @@ import { PillButton } from "@/components/shared/PillButton";
 import { api } from "@/convex/_generated/api";
 import { EMPTY_STATES } from "@/lib/constants";
 
-import { HomeHero, HomeHeroSkeleton } from "./HomeHero";
+import { HomeHero } from "./HomeHero";
 import { PodcastGrid } from "./PodcastGrid";
 import { PodcastShelf } from "./PodcastShelf";
 
@@ -18,27 +22,26 @@ const PAGE_SIZE = 8;
 
 // Also the default /discover view, with its own titles (screens.md §2.5).
 export function HomeFeed({
+  preloadedTrending,
   trendingTitle = "Tendencias",
   latestTitle = "Recientes",
-  trendingLimit = PAGE_SIZE,
   featured = false,
 }: {
+  /** Loaded on the server, so the hero (the LCP) ships in the HTML. */
+  preloadedTrending: Preloaded<typeof api.podcasts.getTrending>;
   trendingTitle?: string;
   latestTitle?: string;
-  trendingLimit?: number;
   /** Home: #1 trending as the hero, the rest as a shelf. */
   featured?: boolean;
 }) {
-  const trending = useQuery(api.podcasts.getTrending, {
-    limit: trendingLimit,
-  });
+  const trending = usePreloadedQuery(preloadedTrending);
   const latest = usePaginatedQuery(
     api.podcasts.getLatest,
     {},
     { initialNumItems: PAGE_SIZE },
   );
 
-  if (trending?.length === 0) {
+  if (trending.length === 0) {
     return (
       <EmptyState
         icon={Radio}
@@ -58,17 +61,12 @@ export function HomeFeed({
 
   return (
     <>
-      {featured &&
-        (trending === undefined ? (
-          <HomeHeroSkeleton />
-        ) : (
-          trending[0] && <HomeHero podcast={trending[0]} />
-        ))}
+      {featured && trending[0] && <HomeHero podcast={trending[0]} />}
       {/* Home: the hero takes #1, so the shelf starts at #2. */}
-      {!(featured && trending?.length === 1) && (
+      {!(featured && trending.length === 1) && (
         <PodcastShelf
           title={trendingTitle}
-          podcasts={featured ? trending?.slice(1) : trending}
+          podcasts={featured ? trending.slice(1) : trending}
         />
       )}
       <section className="flex flex-col gap-5">
