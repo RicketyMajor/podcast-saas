@@ -22,9 +22,9 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div className="relative flex h-full flex-col justify-between p-10">
           <Logo />
           <div className="flex max-w-lg flex-col gap-5">
-            <p className="font-display text-[clamp(2.25rem,3.6vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance">
+            <h2 className="font-display text-[clamp(2.25rem,3.6vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance">
               Crea podcasts con IA en minutos
-            </p>
+            </h2>
             <p className="max-w-sm text-lg text-pretty text-foreground/80">
               Escribe un guion, elige una voz y publica. Sin micrófono.
             </p>

@@ -41,9 +41,12 @@ const messageOf = (err: unknown) =>
 export function GenerateThumbnail({
   image,
   onImageChange,
+  primary,
 }: {
   image: Thumbnail | null;
   onImageChange: (image: Thumbnail) => void;
+  /** Ivory only while this is the rail's current stage. */
+  primary: boolean;
 }) {
   const generateThumbnail = useAction(api.ai.actions.generateThumbnail);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
@@ -133,12 +136,20 @@ export function GenerateThumbnail({
       )}
 
       <Tabs defaultValue="ai" className="gap-4">
-        <TabsList className="w-full sm:w-fit">
-          <TabsTrigger value="ai" disabled={pending !== null}>
+        <TabsList className="w-full rounded-full p-0.5 group-data-horizontal/tabs:h-12.5 sm:w-fit">
+          <TabsTrigger
+            value="ai"
+            className="rounded-full px-4"
+            disabled={pending !== null}
+          >
             <Sparkles aria-hidden />
             Generar con IA
           </TabsTrigger>
-          <TabsTrigger value="upload" disabled={pending !== null}>
+          <TabsTrigger
+            value="upload"
+            className="rounded-full px-4"
+            disabled={pending !== null}
+          >
             <ImageUp aria-hidden />
             Subir imagen
           </TabsTrigger>
@@ -167,7 +178,7 @@ export function GenerateThumbnail({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               type="button"
-              variant={image?.source === "ai" ? "outline" : "default"}
+              variant={primary ? "default" : "outline"}
               className="h-11 rounded-full px-5 transition-transform active:scale-95"
               disabled={!canGenerate || pending !== null}
               onClick={handleGenerate}

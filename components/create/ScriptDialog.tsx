@@ -45,7 +45,7 @@ import {
 import type { PodcastFormValues } from "@/lib/validations/podcast";
 
 const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
-const SELECT_TRIGGER = "h-10 w-full data-[size=default]:h-10";
+const SELECT_TRIGGER = "h-11 w-full data-[size=default]:h-11";
 
 export function ScriptDialog({
   control,

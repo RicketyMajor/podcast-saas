@@ -18,7 +18,11 @@ import {
   GenerateThumbnail,
   type Thumbnail,
 } from "@/components/create/GenerateThumbnail";
-import { CreateStages, type Stage } from "@/components/create/CreateStages";
+import {
+  CreateStages,
+  currentStage,
+  type Stage,
+} from "@/components/create/CreateStages";
 import { ScriptDialog } from "@/components/create/ScriptDialog";
 import type { PodcastDetailData } from "@/components/podcast/PodcastDetailHeader";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
@@ -171,6 +175,7 @@ export function PodcastForm({
     },
     { target: "stage-publish", label: "Publicar", status: "todo" },
   ];
+  const current = currentStage(stages);
   const action = editing ? "guardar" : "publicar";
   const publishHelp = !audioReady
     ? `Genera el audio con el guion actual para ${action}.`
@@ -424,6 +429,7 @@ export function PodcastForm({
               control={control}
               audio={audio}
               onAudioChange={setAudio}
+              primary={current === 1}
             />
           </FieldGroup>
         </FieldSet>
@@ -437,7 +443,11 @@ export function PodcastForm({
       >
         <FieldSet className={FIELDSET}>
           <FieldLegend className={LEGEND}>Portada</FieldLegend>
-          <GenerateThumbnail image={image} onImageChange={setImage} />
+          <GenerateThumbnail
+            image={image}
+            onImageChange={setImage}
+            primary={current === 2}
+          />
         </FieldSet>
       </section>
 
@@ -449,6 +459,7 @@ export function PodcastForm({
       >
         <PillButton
           type="submit"
+          tone={current === 3 ? "primary" : "glass"}
           disabled={!canPublish || isSubmitting}
           aria-describedby={publishHelp ? "publish-help" : undefined}
         >

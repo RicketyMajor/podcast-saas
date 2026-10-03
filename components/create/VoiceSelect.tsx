@@ -64,7 +64,7 @@ export function VoiceSelect({
           id={id}
           onBlur={onBlur}
           aria-invalid={invalid}
-          className="h-10 w-full min-w-0 data-[size=default]:h-10"
+          className="h-11 w-full min-w-0 data-[size=default]:h-11"
         >
           <SelectValue placeholder="Elige una voz" />
         </SelectTrigger>
@@ -81,7 +81,7 @@ export function VoiceSelect({
         type="button"
         variant="outline"
         size="icon"
-        className="size-10 shrink-0"
+        className="size-11 shrink-0"
         disabled={!value}
         onClick={toggleSample}
         aria-label={

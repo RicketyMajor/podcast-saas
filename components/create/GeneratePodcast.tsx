@@ -51,10 +51,13 @@ export function GeneratePodcast({
   control,
   audio,
   onAudioChange,
+  primary,
 }: {
   control: Control<PodcastFormValues>;
   audio: GeneratedAudio | null;
   onAudioChange: (audio: GeneratedAudio) => void;
+  /** Ivory only while this is the rail's current stage. */
+  primary: boolean;
 }) {
   const generateAudio = useAction(api.ai.actions.generateAudio);
   const [pending, setPending] = useState(false);
@@ -145,7 +148,7 @@ export function GeneratePodcast({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button
           type="button"
-          variant={audio && !stale ? "outline" : "default"}
+          variant={primary ? "default" : "outline"}
           className="h-11 rounded-full px-5 transition-transform active:scale-95"
           disabled={!canGenerate || pending}
           onClick={handleGenerate}
