@@ -58,22 +58,18 @@ export function HomeFeed({
 
   return (
     <>
-      {featured ? (
-        <>
-          {trending === undefined ? (
-            <HomeHeroSkeleton />
-          ) : (
-            trending[0] && <HomeHero podcast={trending[0]} />
-          )}
-          {trending?.length !== 1 && (
-            <PodcastShelf title={trendingTitle} podcasts={trending?.slice(1)} />
-          )}
-        </>
-      ) : (
-        <section className="flex flex-col gap-5">
-          <SectionHeader title={trendingTitle} />
-          <PodcastGrid podcasts={trending} skeletons={trendingLimit} />
-        </section>
+      {featured &&
+        (trending === undefined ? (
+          <HomeHeroSkeleton />
+        ) : (
+          trending[0] && <HomeHero podcast={trending[0]} />
+        ))}
+      {/* Home: the hero takes #1, so the shelf starts at #2. */}
+      {!(featured && trending?.length === 1) && (
+        <PodcastShelf
+          title={trendingTitle}
+          podcasts={featured ? trending?.slice(1) : trending}
+        />
       )}
       <section className="flex flex-col gap-5">
         <SectionHeader title={latestTitle} />

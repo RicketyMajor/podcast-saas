@@ -39,10 +39,10 @@ export function Searchbar({ search }: { search: string }) {
   }
 
   return (
-    <div role="search" className="relative">
+    <div role="search" className="group/search relative max-w-2xl">
       <Search
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-4.5 size-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within/search:text-ambient"
       />
       <Input
         type="search"
@@ -51,7 +51,7 @@ export function Searchbar({ search }: { search: string }) {
         placeholder="Busca por título o creador"
         aria-label="Busca por título o creador"
         maxLength={100}
-        className="h-11 pl-10"
+        className="h-12 rounded-full bg-card/60 pr-5 pl-12 text-base shadow-lg shadow-black/20 md:text-base dark:bg-card/60"
       />
     </div>
   );

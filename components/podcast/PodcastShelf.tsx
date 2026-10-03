@@ -99,8 +99,8 @@ export function PodcastShelf({
             <motion.li
               key={podcast._id}
               layout="position"
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ x: 24 }}
+              animate={{ x: 0 }}
               transition={{
                 duration: 0.5,
                 ease: [0.16, 1, 0.3, 1],
