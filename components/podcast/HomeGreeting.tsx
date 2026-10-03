@@ -17,11 +17,16 @@ export function HomeGreeting() {
       {user === undefined ? (
         <Skeleton className="h-9 w-48" />
       ) : (
-        <h1 className="text-[1.75rem] font-bold tracking-tight text-balance">
+        <h1 className="text-[1.75rem] font-extrabold tracking-tight text-balance sm:text-[2rem]">
           {firstName ? `Hola, ${firstName}` : "Podcasts creados con IA"}
         </h1>
       )}
-      <Button asChild size="lg" className="self-start sm:self-auto">
+      <Button
+        asChild
+        variant="outline"
+        size="lg"
+        className="h-11 self-start rounded-full border-foreground/15 bg-background/30 px-5 backdrop-blur-md sm:self-auto"
+      >
         <Link href="/create-podcast">
           <Mic aria-hidden />
           Crear podcast

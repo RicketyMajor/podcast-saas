@@ -20,6 +20,17 @@ export type PodcastCardData = FunctionReturnType<
 
 export const coverTransitionName = (id: string) => `cover-${id}`;
 
+/**
+ * Names a cover just before navigating to its detail page, so it morphs into
+ * the detail header. Only on click: the same podcast can sit in two lists on
+ * one page, and duplicate view-transition names abort the whole transition.
+ */
+export function nameCoverForMorph(el: HTMLElement | null, id: string) {
+  if (!el) return;
+  el.style.viewTransitionName = coverTransitionName(id);
+  el.style.setProperty("view-transition-class", "cover");
+}
+
 // The title link stretches over the whole card (after:inset-0); the play
 // button sits above it, since a <button> can't live inside an <a>.
 export function PodcastCard({
@@ -44,14 +55,7 @@ export function PodcastCard({
       args: { podcastId: podcast._id },
     });
 
-  // Named only on click: the same podcast can sit in two lists on one page,
-  // and duplicate view-transition names abort the whole transition.
-  const nameCover = () => {
-    const el = coverRef.current;
-    if (!el) return;
-    el.style.viewTransitionName = coverTransitionName(podcast._id);
-    el.style.setProperty("view-transition-class", "cover");
-  };
+  const nameCover = () => nameCoverForMorph(coverRef.current, podcast._id);
 
   return (
     <div

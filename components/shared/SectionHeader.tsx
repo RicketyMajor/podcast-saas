@@ -12,8 +12,8 @@ export function SectionHeader({
       <Heading
         className={
           Heading === "h1"
-            ? "text-[1.75rem] font-bold tracking-tight text-balance"
-            : "text-[1.375rem] font-semibold tracking-tight text-balance"
+            ? "text-[1.75rem] font-extrabold tracking-tight text-balance sm:text-[2rem]"
+            : "text-[1.375rem] font-bold tracking-tight text-balance"
         }
       >
         {title}

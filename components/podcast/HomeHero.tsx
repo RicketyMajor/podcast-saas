@@ -1,0 +1,207 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { AudioLines, Headphones, TrendingUp } from "lucide-react";
+import { motion, MotionConfig } from "motion/react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRef } from "react";
+
+import { PlayPauseIcon } from "@/components/player/PlayPauseIcon";
+import { AiBadge } from "@/components/shared/AiBadge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
+import { formatCount, formatDuration } from "@/lib/utils";
+import { usePageCover } from "@/stores/ambient-store";
+import { usePlayerStore } from "@/stores/player-store";
+
+import { nameCoverForMorph, type PodcastCardData } from "./PodcastCard";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const rise = {
+  hidden: { opacity: 0, y: 18 },
+  shown: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+};
+
+/** #1 in trending, lit by its own cover: the app's first color. */
+export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
+  usePageCover(podcast.imageUrl);
+  // Description and plays; also warms the detail page for the cover morph.
+  const detail = useQuery(api.podcasts.getById, { podcastId: podcast._id });
+  const coverRef = useRef<HTMLAnchorElement>(null);
+  const playing = usePlayerStore(
+    (s) => s.isPlaying && s.track?.podcastId === podcast._id,
+  );
+  const href = `/podcasts/${podcast._id}`;
+  const nameCover = () => nameCoverForMorph(coverRef.current, podcast._id);
+
+  function togglePlay() {
+    const { play, pause } = usePlayerStore.getState();
+    if (playing) return pause();
+    if (!podcast.audioUrl) return;
+    play({
+      podcastId: podcast._id,
+      title: podcast.title,
+      authorId: podcast.authorId,
+      authorName: podcast.authorName,
+      imageUrl: podcast.imageUrl,
+      audioUrl: podcast.audioUrl,
+      durationSec: podcast.audioDurationSec,
+    });
+  }
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <section
+        aria-labelledby="hero-title"
+        className="relative isolate overflow-hidden rounded-3xl ring-1 ring-foreground/8"
+      >
+        {podcast.imageUrl && (
+          <Image
+            src={podcast.imageUrl}
+            alt=""
+            fill
+            sizes="64px"
+            aria-hidden
+            className="-z-10 scale-150 object-cover opacity-60 blur-3xl saturate-150"
+          />
+        )}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-linear-to-t from-background/90 via-background/55 to-background/15 sm:bg-linear-to-r"
+        />
+
+        <motion.div
+          initial="hidden"
+          animate="shown"
+          transition={{ staggerChildren: 0.08, delayChildren: 0.1 }}
+          className="flex flex-col gap-6 p-5 sm:flex-row sm:items-end sm:gap-8 sm:p-8 lg:p-10"
+        >
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, scale: 0.9, filter: "blur(12px)" },
+              shown: {
+                opacity: 1,
+                scale: 1,
+                filter: "blur(0px)",
+                transition: { duration: 0.8, ease: EASE },
+              },
+            }}
+            className="w-40 shrink-0 sm:w-52 lg:w-60"
+          >
+            <Link
+              ref={coverRef}
+              href={href}
+              onClick={nameCover}
+              tabIndex={-1}
+              aria-hidden
+              className="relative block aspect-square overflow-hidden rounded-2xl bg-muted shadow-2xl ring-1 shadow-black/60 ring-foreground/10"
+            >
+              {podcast.imageUrl ? (
+                <Image
+                  src={podcast.imageUrl}
+                  alt=""
+                  fill
+                  priority
+                  sizes="240px"
+                  className="object-cover"
+                />
+              ) : (
+                <AudioLines className="absolute inset-0 m-auto size-12 text-muted-foreground" />
+              )}
+            </Link>
+          </motion.div>
+
+          <div className="flex min-w-0 flex-col gap-4">
+            <motion.h2
+              id="hero-title"
+              variants={rise}
+              className="font-display text-[clamp(2rem,4.6vw,3.75rem)] leading-[0.98] font-extrabold tracking-[-0.035em] break-words"
+            >
+              <Link
+                href={href}
+                onClick={nameCover}
+                className="rounded-md outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {podcast.title}
+              </Link>
+            </motion.h2>
+            <motion.div
+              variants={rise}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground/80"
+            >
+              <Link
+                href={`/profile/${podcast.authorId}`}
+                className="font-semibold text-foreground hover:underline"
+              >
+                {podcast.authorName}
+              </Link>
+              <AiBadge />
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <TrendingUp aria-hidden className="size-4 text-ambient" />
+                N.º 1 en tendencias
+              </span>
+              <span className="tabular-nums">
+                {formatDuration(podcast.audioDurationSec)}
+              </span>
+              {detail && (
+                <span className="flex items-center gap-1.5 tabular-nums">
+                  <Headphones aria-hidden className="size-4" />
+                  {formatCount(detail.views)}
+                  <span className="sr-only">reproducciones</span>
+                </span>
+              )}
+            </motion.div>
+            {detail?.description && (
+              <motion.p
+                variants={rise}
+                className="line-clamp-2 max-w-xl text-pretty text-foreground/75"
+              >
+                {detail.description}
+              </motion.p>
+            )}
+            <motion.div variants={rise} className="flex flex-wrap gap-3 pt-1">
+              <Button
+                size="lg"
+                className="h-12 rounded-full px-7 text-base shadow-lg shadow-black/30 transition-transform active:scale-95"
+                disabled={!podcast.audioUrl}
+                onClick={togglePlay}
+              >
+                <PlayPauseIcon playing={playing} className="size-5" />
+                {playing ? "Pausar" : "Reproducir"}
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-12 rounded-full border-foreground/20 bg-background/30 px-6 text-base backdrop-blur-md"
+              >
+                <Link href={href} onClick={nameCover}>
+                  Ver episodio
+                </Link>
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
+      </section>
+    </MotionConfig>
+  );
+}
+
+export function HomeHeroSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Cargando destacado"
+      className="flex flex-col gap-6 rounded-3xl bg-card p-5 sm:flex-row sm:items-end sm:gap-8 sm:p-8 lg:p-10"
+    >
+      <Skeleton className="aspect-square w-40 rounded-2xl sm:w-52 lg:w-60" />
+      <div className="flex flex-1 flex-col gap-4">
+        <Skeleton className="h-12 w-3/4" />
+        <Skeleton className="h-4 w-56" />
+        <Skeleton className="h-12 w-40 rounded-full" />
+      </div>
+    </div>
+  );
+}

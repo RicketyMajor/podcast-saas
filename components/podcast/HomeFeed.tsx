@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { EMPTY_STATES } from "@/lib/constants";
 
+import { HomeHero, HomeHeroSkeleton } from "./HomeHero";
 import { PodcastGrid } from "./PodcastGrid";
+import { PodcastShelf } from "./PodcastShelf";
 
 const PAGE_SIZE = 8;
 
@@ -19,10 +21,13 @@ export function HomeFeed({
   trendingTitle = "Tendencias",
   latestTitle = "Recientes",
   trendingLimit = PAGE_SIZE,
+  featured = false,
 }: {
   trendingTitle?: string;
   latestTitle?: string;
   trendingLimit?: number;
+  /** Home: #1 trending as the hero, the rest as a shelf. */
+  featured?: boolean;
 }) {
   const trending = useQuery(api.podcasts.getTrending, {
     limit: trendingLimit,
@@ -53,10 +58,23 @@ export function HomeFeed({
 
   return (
     <>
-      <section className="flex flex-col gap-5">
-        <SectionHeader title={trendingTitle} />
-        <PodcastGrid podcasts={trending} skeletons={trendingLimit} />
-      </section>
+      {featured ? (
+        <>
+          {trending === undefined ? (
+            <HomeHeroSkeleton />
+          ) : (
+            trending[0] && <HomeHero podcast={trending[0]} />
+          )}
+          {trending?.length !== 1 && (
+            <PodcastShelf title={trendingTitle} podcasts={trending?.slice(1)} />
+          )}
+        </>
+      ) : (
+        <section className="flex flex-col gap-5">
+          <SectionHeader title={trendingTitle} />
+          <PodcastGrid podcasts={trending} skeletons={trendingLimit} />
+        </section>
+      )}
       <section className="flex flex-col gap-5">
         <SectionHeader title={latestTitle} />
         <PodcastGrid
@@ -68,7 +86,7 @@ export function HomeFeed({
           latest.status === "LoadingMore") && (
           <Button
             variant="outline"
-            className="h-10 self-center"
+            className="h-11 self-center rounded-full px-6"
             disabled={latest.status === "LoadingMore"}
             onClick={() => latest.loadMore(PAGE_SIZE)}
           >
