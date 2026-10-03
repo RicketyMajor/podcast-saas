@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 
+import type { Id } from "../_generated/dataModel";
 import { internalMutation } from "../_generated/server";
 import {
   DAILY_AUDIO_GENERATIONS,
@@ -83,6 +84,58 @@ export const reserveGeneration = internalMutation({
       consumed: false,
       status: "pending",
     });
+  },
+});
+
+/**
+ * Daily cron: deletes files nobody published, created 24 h to 7 days ago.
+ * A file is an orphan if its generation was never consumed, or if it has no
+ * generation (an upload) and no podcast uses it as cover. The window keeps
+ * each run small and survives a few missed runs. The generation row stays,
+ * without its file, as cost history.
+ */
+export const cleanupOrphans = internalMutation({
+  args: { dryRun: v.optional(v.boolean()) },
+  returns: v.array(v.id("_storage")),
+  handler: async (ctx, { dryRun }) => {
+    const now = Date.now();
+    // ponytail: 500 files per run (~2 days of full quotas for 20 users);
+    // reschedule itself with a cursor if the window gets bigger than that.
+    const files = await ctx.db.system
+      .query("_storage")
+      .withIndex("by_creation_time", (q) =>
+        q
+          .gt("_creationTime", now - 7 * DAY_MS)
+          .lt("_creationTime", now - DAY_MS),
+      )
+      .take(500);
+
+    const orphans: Id<"_storage">[] = [];
+    for (const file of files) {
+      const generation = await ctx.db
+        .query("aiGenerations")
+        .withIndex("by_storage", (q) => q.eq("storageId", file._id))
+        .unique();
+      const orphan = generation
+        ? !generation.consumed
+        : (await ctx.db
+            .query("podcasts")
+            .withIndex("by_image", (q) => q.eq("imageStorageId", file._id))
+            .first()) === null;
+      if (!orphan) continue;
+      orphans.push(file._id);
+      if (dryRun) continue;
+      if (generation) {
+        await ctx.db.patch("aiGenerations", generation._id, {
+          storageId: undefined,
+        });
+      }
+      await ctx.storage.delete(file._id);
+    }
+    if (orphans.length > 0) {
+      console.log(`cleanupOrphans: ${orphans.length} file(s)`, { dryRun });
+    }
+    return orphans;
   },
 });
 
