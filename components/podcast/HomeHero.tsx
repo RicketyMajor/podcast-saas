@@ -79,7 +79,7 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
           initial="hidden"
           animate="shown"
           transition={{ staggerChildren: 0.08, delayChildren: 0.1 }}
-          className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:min-h-[44vh] lg:py-8"
+          className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:py-6"
         >
           <motion.div
             variants={{
@@ -200,7 +200,7 @@ export function HomeHeroSkeleton() {
     <div
       aria-busy="true"
       aria-label="Cargando destacado"
-      className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:min-h-[44vh] lg:py-8"
+      className="flex flex-col gap-6 py-4 sm:flex-row sm:items-end sm:gap-10 lg:py-6"
     >
       <Skeleton className="aspect-square w-44 rounded-2xl sm:w-56 lg:w-70" />
       <div className="flex flex-1 flex-col gap-4">
