@@ -20,7 +20,7 @@ export function MobileNav() {
   const close = () => setOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-4 lg:hidden">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-foreground/8 bg-background/70 px-4 backdrop-blur-2xl backdrop-saturate-150 lg:hidden">
       <Logo />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
@@ -37,7 +37,7 @@ export function MobileNav() {
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="w-72 gap-8 border-border bg-background px-4 py-5"
+          className="w-72 gap-8 border-foreground/8 bg-background/85 px-4 py-5 backdrop-blur-2xl"
         >
           <div className="flex items-center justify-between pl-3">
             <SheetTitle asChild>

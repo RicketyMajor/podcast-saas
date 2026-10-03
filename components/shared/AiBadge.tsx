@@ -9,7 +9,7 @@ export function AiBadge({ className }: { className?: string }) {
     <span
       title={LABEL}
       className={cn(
-        "inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground",
+        "inline-flex items-center gap-1 rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium text-foreground/85 backdrop-blur-md",
         className,
       )}
     >

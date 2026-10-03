@@ -5,7 +5,7 @@ import { NavLinks } from "@/components/layout/NavLinks";
 
 export function LeftSidebar() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-68 shrink-0 flex-col gap-10 border-r border-border px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-68 shrink-0 flex-col gap-10 border-r border-foreground/8 px-4 py-6 lg:flex">
       <div className="px-3">
         <Logo />
       </div>

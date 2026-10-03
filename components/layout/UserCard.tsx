@@ -16,7 +16,7 @@ export function UserCard() {
 
   if (me === null) {
     return (
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/8">
         <p className="text-sm text-pretty text-muted-foreground">
           Crea tu cuenta para publicar tus podcasts.
         </p>
@@ -34,7 +34,7 @@ export function UserCard() {
   return (
     <Link
       href={`/profile/${me._id}`}
-      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="flex items-center gap-3 rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/8 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Avatar className="size-10">
         {me.image && <AvatarImage src={me.image} alt="" />}

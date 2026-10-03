@@ -9,7 +9,7 @@ export function RightSidebar() {
   return (
     <aside
       aria-label="Destacados y creadores"
-      className="sticky top-0 hidden h-dvh w-78 shrink-0 flex-col overflow-y-auto border-l border-border xl:flex"
+      className="sticky top-0 hidden h-dvh w-78 shrink-0 flex-col overflow-y-auto border-l border-foreground/8 xl:flex"
     >
       <div className="flex flex-col gap-8 px-5 py-6">
         <UserCard />

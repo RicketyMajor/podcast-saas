@@ -36,7 +36,7 @@ export function FeaturedCarousel() {
 
   return (
     <section aria-labelledby="featured" className="flex flex-col gap-3">
-      <h2 id="featured" className="text-lg font-semibold tracking-tight">
+      <h2 id="featured" className="text-lg font-bold tracking-tight">
         Destacados
       </h2>
       {featured === undefined ? (
@@ -61,7 +61,7 @@ export function FeaturedCarousel() {
                   href={`/podcasts/${podcast._id}`}
                   className="group flex flex-col gap-2 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-muted">
+                  <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/8">
                     {podcast.imageUrl ? (
                       <Image
                         src={podcast.imageUrl}
@@ -111,9 +111,9 @@ export function FeaturedCarousel() {
                   >
                     <span
                       className={cn(
-                        "size-2 rounded-full bg-muted-foreground/40 transition-colors group-hover/dot:bg-muted-foreground",
+                        "h-2 w-2 rounded-full bg-muted-foreground/40 transition-[width,background-color] duration-300 ease-out-expo group-hover/dot:bg-muted-foreground",
                         i === selected &&
-                          "bg-primary group-hover/dot:bg-primary",
+                          "w-5 bg-foreground group-hover/dot:bg-foreground",
                       )}
                     />
                   </button>

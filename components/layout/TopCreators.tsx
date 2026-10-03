@@ -14,7 +14,7 @@ export function TopCreators() {
 
   return (
     <section aria-labelledby="top-creators" className="flex flex-col gap-3">
-      <h2 id="top-creators" className="text-lg font-semibold tracking-tight">
+      <h2 id="top-creators" className="text-lg font-bold tracking-tight">
         Top creadores
       </h2>
       {creators === undefined ? (
