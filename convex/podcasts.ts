@@ -39,6 +39,7 @@ const podcastCard = v.object({
   authorId: v.id("users"),
   authorName: v.string(),
   audioDurationSec: v.number(),
+  views: v.number(),
   imageUrl: v.union(v.string(), v.null()),
   audioUrl: v.union(v.string(), v.null()),
 });
@@ -55,6 +56,7 @@ async function toCard(ctx: QueryCtx, p: Doc<"podcasts">) {
     authorId: p.authorId,
     authorName: p.authorName,
     audioDurationSec: p.audioDurationSec,
+    views: p.views,
     imageUrl,
     audioUrl,
   };

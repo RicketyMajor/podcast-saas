@@ -84,15 +84,15 @@ function ProfileNotFound() {
 function ProfileSkeleton() {
   return (
     <div
-      className="flex flex-col items-center gap-6 sm:flex-row sm:items-end"
+      className="flex flex-col items-center gap-6 sm:flex-row sm:items-end sm:gap-8"
       aria-busy="true"
       aria-label="Cargando perfil"
     >
-      <Skeleton className="size-32 rounded-full sm:size-40" />
+      <Skeleton className="size-36 rounded-full sm:size-44 lg:size-52" />
       <div className="flex flex-col items-center gap-4 sm:items-start">
-        <Skeleton className="h-10 w-56" />
+        <Skeleton className="h-12 w-64 rounded-xl" />
         <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-11 w-48 rounded-full" />
+        <Skeleton className="h-12 w-52 rounded-full" />
       </div>
     </div>
   );
