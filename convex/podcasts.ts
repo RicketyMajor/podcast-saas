@@ -80,7 +80,11 @@ export const getLatest = query({
     const result = await ctx.db
       .query("podcasts")
       .order("desc")
-      .paginate(paginationOpts);
+      // Public endpoint: cap the page size the client asks for.
+      .paginate({
+        ...paginationOpts,
+        numItems: Math.min(paginationOpts.numItems, 50),
+      });
     return {
       ...result,
       page: await Promise.all(result.page.map((p) => toCard(ctx, p))),
