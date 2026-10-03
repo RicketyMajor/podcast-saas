@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player-store";
 
 // Five bars drawn as a wave; they ripple only while something is playing.
@@ -34,11 +35,12 @@ export function Logo() {
             height={bar.h}
             rx="1.5"
             fill="currentColor"
-            className="origin-center [transform-box:fill-box] motion-safe:animate-[eq_1.1s_ease-in-out_infinite]"
-            style={{
-              animationDelay: bar.delay,
-              animationPlayState: playing ? "running" : "paused",
-            }}
+            // At rest the full wave shows; it ripples only while playing.
+            className={cn(
+              "origin-center [transform-box:fill-box]",
+              playing && "motion-safe:animate-[eq_1.1s_ease-in-out_infinite]",
+            )}
+            style={{ animationDelay: bar.delay }}
           />
         ))}
       </svg>

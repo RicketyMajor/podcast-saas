@@ -5,7 +5,7 @@ import { AudioLines, Maximize2, RotateCcw, RotateCw, X } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AiBadge } from "@/components/shared/AiBadge";
 import { EqualizerBars } from "@/components/shared/EqualizerBars";
@@ -53,6 +53,7 @@ export function PodcastPlayer() {
   const registerView = useMutation(api.podcasts.registerView);
   const [dragTime, setDragTime] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const expandRef = useRef<HTMLButtonElement>(null);
   if (!track && expanded) setExpanded(false);
 
   // P1: Space toggles playback anywhere outside fields and controls.
@@ -144,6 +145,7 @@ export function PodcastPlayer() {
             <div className="relative flex h-16 items-center gap-3 px-2.5 lg:h-20 lg:gap-6 lg:px-4">
               <div className="flex min-w-0 flex-1 items-center gap-3 lg:basis-0">
                 <button
+                  ref={expandRef}
                   type="button"
                   onClick={() => setExpanded(true)}
                   aria-label="Expandir reproductor"
@@ -287,6 +289,7 @@ export function PodcastPlayer() {
             onScrub={setDragTime}
             onScrubEnd={commitScrub}
             onClose={() => setExpanded(false)}
+            returnFocusRef={expandRef}
           />
         )}
       </AnimatePresence>

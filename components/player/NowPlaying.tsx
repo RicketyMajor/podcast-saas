@@ -30,12 +30,15 @@ export function NowPlaying({
   onScrub,
   onScrubEnd,
   onClose,
+  returnFocusRef,
 }: {
   track: Track;
   shownTime: number;
   onScrub: (sec: number) => void;
   onScrubEnd: (sec: number) => void;
   onClose: () => void;
+  /** The bar's cover button: no Dialog.Trigger here, so focus is returned by hand. */
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const { toggle, skip } = usePlayerStore.getState();
@@ -49,6 +52,10 @@ export function NowPlaying({
           asChild
           forceMount
           aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocusRef.current?.focus();
+          }}
         >
           <motion.div
             initial={{ opacity: 0, y: 48 }}

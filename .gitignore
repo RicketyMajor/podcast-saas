@@ -59,3 +59,4 @@ convex/_generated/ai/
 
 # Impeccable design workspace (local)
 .impeccable/
+.playwright-cli/
