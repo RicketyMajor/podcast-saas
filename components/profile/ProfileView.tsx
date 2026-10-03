@@ -7,7 +7,7 @@ import Link from "next/link";
 import { PodcastGrid } from "@/components/podcast/PodcastGrid";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 
@@ -38,12 +38,12 @@ export function ProfileView({ profileId }: { profileId: string }) {
               title="Todavía no has creado podcasts"
               description="Escribe un guion, elige una voz y la IA hace el resto."
               action={
-                <Button asChild>
+                <PillButton asChild>
                   <Link href="/create-podcast">
                     <Mic aria-hidden />
                     Crear mi primer podcast
                   </Link>
-                </Button>
+                </PillButton>
               }
             />
           ) : (
@@ -66,15 +66,16 @@ export function ProfileView({ profileId }: { profileId: string }) {
 function ProfileNotFound() {
   return (
     <EmptyState
+      as="h1"
       icon={UserX}
       title="Este perfil no existe"
       action={
-        <Button asChild>
+        <PillButton asChild>
           <Link href="/">
             <Home aria-hidden />
             Volver al inicio
           </Link>
-        </Button>
+        </PillButton>
       }
     />
   );

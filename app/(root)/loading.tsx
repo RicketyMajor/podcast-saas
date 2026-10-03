@@ -1,14 +1,15 @@
+import { PodcastCardSkeleton } from "@/components/podcast/PodcastCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Instant feedback while a route's server part loads; pages then show their
-// own skeletons while Convex data arrives.
+// own skeletons while Convex data arrives. Same grid as PodcastGrid.
 export default function Loading() {
   return (
-    <div className="flex flex-col gap-6" aria-busy="true" aria-label="Cargando">
-      <Skeleton className="h-9 w-56" />
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 2xl:grid-cols-4">
+    <div className="flex flex-col gap-8" aria-busy="true" aria-label="Cargando">
+      <Skeleton className="h-10 w-56 rounded-xl" />
+      <div className="grid grid-cols-2 gap-x-4 gap-y-7 md:grid-cols-3 2xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-xl" />
+          <PodcastCardSkeleton key={i} />
         ))}
       </div>
     </div>

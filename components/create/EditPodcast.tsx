@@ -8,7 +8,7 @@ import { PodcastForm } from "@/components/create/PodcastForm";
 import { PodcastNotFound } from "@/components/podcast/PodcastDetail";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import { api } from "@/convex/_generated/api";
 
 export function EditPodcast({ podcastId }: { podcastId: string }) {
@@ -32,12 +32,12 @@ export function EditPodcast({ podcastId }: { podcastId: string }) {
         title="No puedes editar este podcast"
         description="Solo su autor puede modificarlo."
         action={
-          <Button asChild variant="outline">
+          <PillButton asChild tone="glass">
             <Link href={`/podcasts/${podcast._id}`}>
               <ArrowLeft aria-hidden />
               Ver el podcast
             </Link>
-          </Button>
+          </PillButton>
         }
       />
     );

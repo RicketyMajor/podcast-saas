@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import { api } from "@/convex/_generated/api";
 import { EMPTY_STATES } from "@/lib/constants";
 
@@ -45,12 +45,12 @@ export function HomeFeed({
         title={EMPTY_STATES.noPodcasts.title}
         description={EMPTY_STATES.noPodcasts.description}
         action={
-          <Button asChild>
+          <PillButton asChild>
             <Link href="/create-podcast">
               <Mic aria-hidden />
               Crear podcast
             </Link>
-          </Button>
+          </PillButton>
         }
       />
     );
@@ -84,9 +84,9 @@ export function HomeFeed({
         />
         {(latest.status === "CanLoadMore" ||
           latest.status === "LoadingMore") && (
-          <Button
-            variant="outline"
-            className="h-11 self-center rounded-full px-6"
+          <PillButton
+            tone="glass"
+            className="self-center"
             disabled={latest.status === "LoadingMore"}
             onClick={() => latest.loadMore(PAGE_SIZE)}
           >
@@ -94,7 +94,7 @@ export function HomeFeed({
               <Loader2 aria-hidden className="animate-spin" />
             )}
             Cargar más
-          </Button>
+          </PillButton>
         )}
       </section>
     </>

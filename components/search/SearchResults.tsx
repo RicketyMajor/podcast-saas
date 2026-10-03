@@ -7,7 +7,7 @@ import Link from "next/link";
 import { PodcastGrid } from "@/components/podcast/PodcastGrid";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import { api } from "@/convex/_generated/api";
 import { formatCount } from "@/lib/utils";
 
@@ -22,18 +22,18 @@ export function SearchResults({ term }: { term: string }) {
         description="Prueba con otras palabras o busca por el nombre del creador."
         action={
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button asChild variant="outline">
+            <PillButton asChild tone="glass">
               <Link href="/discover">
                 <X aria-hidden />
                 Limpiar búsqueda
               </Link>
-            </Button>
-            <Button asChild>
+            </PillButton>
+            <PillButton asChild>
               <Link href={`/create-podcast?title=${encodeURIComponent(term)}`}>
                 <Mic aria-hidden />
                 Crear un podcast sobre esto
               </Link>
-            </Button>
+            </PillButton>
           </div>
         }
       />

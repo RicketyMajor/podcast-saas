@@ -159,6 +159,14 @@
   }
 }
 
+/* 404: the wave settles into silence (animates from full height to the
+   element's own flattened transform). */
+@keyframes flatline {
+  from {
+    transform: none;
+  }
+}
+
 /* Ambient light drift while playing (transform only: composited). */
 @keyframes ambient-drift {
   50% {

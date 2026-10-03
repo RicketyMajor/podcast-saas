@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -69,12 +69,12 @@ export function PodcastNotFound() {
       icon={SearchX}
       title="Este podcast no existe o fue eliminado"
       action={
-        <Button asChild>
+        <PillButton asChild>
           <Link href="/">
             <Home aria-hidden />
             Volver al inicio
           </Link>
-        </Button>
+        </PillButton>
       }
     />
   );
