@@ -56,3 +56,6 @@ next-env.d.ts
 .agents/
 skills-lock.json
 convex/_generated/ai/
+
+# Impeccable design workspace (local)
+.impeccable/
