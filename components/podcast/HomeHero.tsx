@@ -19,9 +19,11 @@ import { usePlayerStore } from "@/stores/player-store";
 import { nameCoverForMorph, type PodcastCardData } from "./PodcastCard";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+// Entrances move but never hide: content is visible (and paints as LCP)
+// from the first frame.
 const rise = {
-  hidden: { opacity: 0, y: 18 },
-  shown: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+  hidden: { y: 18 },
+  shown: { y: 0, transition: { duration: 0.6, ease: EASE } },
 };
 
 /** #1 in trending, lit by its own cover: the app's first color. */
@@ -80,9 +82,8 @@ export function HomeHero({ podcast }: { podcast: PodcastCardData }) {
         >
           <motion.div
             variants={{
-              hidden: { opacity: 0, scale: 0.9, filter: "blur(12px)" },
+              hidden: { scale: 0.92, filter: "blur(12px)" },
               shown: {
-                opacity: 1,
                 scale: 1,
                 filter: "blur(0px)",
                 transition: { duration: 0.8, ease: EASE },
