@@ -12,11 +12,15 @@ export function AuthButton({ onNavigate }: { onNavigate?: () => void }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
 
-  if (isLoading) return <Skeleton className="h-10 w-full" />;
+  if (isLoading) return <Skeleton className="h-11 w-full rounded-full" />;
 
   if (!isAuthenticated) {
     return (
-      <Button asChild variant="outline" size="lg" className="w-full">
+      <Button
+        asChild
+        variant="outline"
+        className="h-11 w-full rounded-full text-sm transition-transform active:scale-95"
+      >
         <Link href="/sign-in" onClick={onNavigate}>
           <LogIn aria-hidden />
           Iniciar sesión
@@ -28,8 +32,7 @@ export function AuthButton({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <Button
       variant="ghost"
-      size="lg"
-      className="w-full justify-start text-muted-foreground"
+      className="h-11 w-full justify-start gap-3 rounded-xl px-3 text-muted-foreground [&_svg:not([class*='size-'])]:size-5"
       onClick={async () => {
         await signOut();
         // Full reload so proxy.ts redirects protected pages with the right URL

@@ -35,11 +35,37 @@ export function FeaturedCarousel() {
 
   if (featured?.length === 0) return null;
 
+  const arrows = featured !== undefined && featured.length > 1;
+
   return (
     <section aria-labelledby="featured" className="flex flex-col gap-3">
-      <h2 id="featured" className="text-lg font-bold tracking-tight">
-        Destacados
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="featured" className="text-lg font-bold tracking-tight">
+          Destacados
+        </h2>
+        {arrows && (
+          <div className="-mr-2.5 flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11 rounded-full"
+              aria-label="Destacado anterior"
+              onClick={() => carousel?.scrollPrev()}
+            >
+              <ChevronLeft aria-hidden />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11 rounded-full"
+              aria-label="Destacado siguiente"
+              onClick={() => carousel?.scrollNext()}
+            >
+              <ChevronRight aria-hidden />
+            </Button>
+          </div>
+        )}
+      </div>
       {featured === undefined ? (
         <Skeleton
           aria-label="Cargando destacados"
@@ -50,7 +76,7 @@ export function FeaturedCarousel() {
           setApi={setCarousel}
           opts={{ loop: true }}
           aria-label="Podcasts destacados"
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-1"
         >
           <CarouselContent>
             {featured.map((podcast, i) => (
@@ -88,47 +114,27 @@ export function FeaturedCarousel() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          {featured.length > 1 && (
-            <div className="flex items-center justify-between gap-2">
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="rounded-full"
-                aria-label="Destacado anterior"
-                onClick={() => carousel?.scrollPrev()}
-              >
-                <ChevronLeft aria-hidden />
-              </Button>
-              <div className="flex items-center gap-1">
-                {featured.map((podcast, i) => (
-                  <button
-                    key={podcast._id}
-                    type="button"
-                    aria-label={`Ir al destacado ${i + 1}`}
-                    aria-current={i === selected}
-                    onClick={() => carousel?.scrollTo(i)}
-                    // 24px hit area around an 8px dot.
-                    className="group/dot flex size-6 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  >
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full bg-muted-foreground/40 transition-[width,background-color] duration-300 ease-out-expo group-hover/dot:bg-muted-foreground",
-                        i === selected &&
-                          "w-5 bg-foreground group-hover/dot:bg-foreground",
-                      )}
-                    />
-                  </button>
-                ))}
-              </div>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="rounded-full"
-                aria-label="Destacado siguiente"
-                onClick={() => carousel?.scrollNext()}
-              >
-                <ChevronRight aria-hidden />
-              </Button>
+          {arrows && (
+            // 44px hit areas around 8px dots; up to five fit the rail.
+            <div className="-ml-4.5 flex items-center">
+              {featured.map((podcast, i) => (
+                <button
+                  key={podcast._id}
+                  type="button"
+                  aria-label={`Ir al destacado ${i + 1}`}
+                  aria-current={i === selected}
+                  onClick={() => carousel?.scrollTo(i)}
+                  className="group/dot flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full bg-muted-foreground/40 transition-[width,background-color] duration-300 ease-out-expo group-hover/dot:bg-muted-foreground",
+                      i === selected &&
+                        "w-5 bg-foreground group-hover/dot:bg-foreground",
+                    )}
+                  />
+                </button>
+              ))}
             </div>
           )}
         </Carousel>

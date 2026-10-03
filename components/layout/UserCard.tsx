@@ -20,7 +20,10 @@ export function UserCard() {
         <p className="text-sm text-pretty text-muted-foreground">
           Crea tu cuenta para publicar tus podcasts.
         </p>
-        <Button asChild className="w-full">
+        <Button
+          asChild
+          className="h-11 w-full rounded-full text-sm shadow-lg shadow-black/30 transition-transform active:scale-95"
+        >
           <Link href="/sign-up">
             <UserPlus aria-hidden />
             Crear cuenta
