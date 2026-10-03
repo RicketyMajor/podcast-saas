@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { PodcastForm } from "@/components/create/PodcastForm";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { TITLE_MAX_CHARS } from "@/convex/lib/limits";
+
+export const metadata: Metadata = { title: "Crear podcast" };
 
 export default async function CreatePodcastPage({
   searchParams,

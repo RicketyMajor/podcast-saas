@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { safeRedirectPath } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Crear cuenta · Waves" };
+export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default async function SignUpPage({
   searchParams,

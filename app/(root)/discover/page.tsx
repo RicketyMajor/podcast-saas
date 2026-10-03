@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { HomeFeed } from "@/components/podcast/HomeFeed";
 import { Searchbar } from "@/components/search/Searchbar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+
+export const metadata: Metadata = { title: "Descubrir" };
 
 export default async function DiscoverPage({
   searchParams,
