@@ -2,7 +2,7 @@
 
 Plataforma para crear, alojar y escuchar podcasts generados con IA. Escribes (o generas) un guion, eliges voz e idioma, la app produce el audio con text-to-speech, creas una portada con IA o la subes, y publicas. Los oyentes descubren, buscan y escuchan con un reproductor que no se corta al navegar.
 
-> En desarrollo.
+**En producción:** https://waves-podcasts.vercel.app
 
 ## Stack
 
