@@ -25,7 +25,10 @@ export function CoverWall() {
   if (covers === undefined) return null;
   if (covers.length === 0) {
     return (
-      <div aria-hidden className="absolute inset-0 grid place-items-center pb-40">
+      <div
+        aria-hidden
+        className="absolute inset-0 grid place-items-center pb-40"
+      >
         <WaveMark className="h-40 w-42" />
       </div>
     );
