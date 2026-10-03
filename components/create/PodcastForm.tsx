@@ -47,6 +47,7 @@ import {
   SCRIPT_MAX_CHARS,
   SPEAKING_RATES,
 } from "@/convex/lib/limits";
+import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { SPEAKING_RATE_LABELS } from "@/lib/constants";
 import { cn, formatCount } from "@/lib/utils";
 import {
@@ -94,7 +95,7 @@ export function PodcastForm({
     control,
     handleSubmit,
     setValue,
-    formState: { isValid, isSubmitting },
+    formState: { isValid, isSubmitting, isDirty, isSubmitSuccessful },
   } = useForm<PodcastFormValues>({
     resolver: zodResolver(podcastFormSchema),
     mode: "onTouched",
@@ -136,6 +137,14 @@ export function PodcastForm({
       : !isValid
         ? "Revisa los campos marcados."
         : null;
+
+  // New files carry a storageId; the published ones being edited don't.
+  useLeaveWarning(
+    !isSubmitSuccessful &&
+      (isDirty ||
+        audio?.storageId !== undefined ||
+        image?.storageId !== undefined),
+  );
 
   const onSubmit = handleSubmit(async (values) => {
     if (!audio || !audioReady || !image) return;
