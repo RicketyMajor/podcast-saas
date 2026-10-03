@@ -34,8 +34,8 @@ export function PodcastGrid({
           // `layout`: when the reactive order changes, cards glide to their
           // new slot instead of jumping.
           layout="position"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ y: 16 }}
+          whileInView={{ y: 0 }}
           viewport={{ once: true, margin: "0px 0px -40px 0px" }}
           transition={{
             duration: 0.5,

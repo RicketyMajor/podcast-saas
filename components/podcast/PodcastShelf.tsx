@@ -56,7 +56,7 @@ export function PodcastShelf({
           <Button
             variant="ghost"
             size="icon"
-            className="size-10 rounded-full"
+            className="size-11 rounded-full"
             aria-label={`Desplazar ${title} a la izquierda`}
             disabled={edges.start}
             onClick={() => scroll(-1)}
@@ -66,7 +66,7 @@ export function PodcastShelf({
           <Button
             variant="ghost"
             size="icon"
-            className="size-10 rounded-full"
+            className="size-11 rounded-full"
             aria-label={`Desplazar ${title} a la derecha`}
             disabled={edges.end}
             onClick={() => scroll(1)}

@@ -235,7 +235,7 @@ function StickyTitleBar({
           <div className="flex h-14 items-center gap-3 px-4 lg:px-10">
             <Button
               size="icon"
-              className="size-10 shrink-0 rounded-full transition-transform active:scale-95"
+              className="size-11 shrink-0 rounded-full transition-transform active:scale-95"
               aria-label={playing ? "Pausar" : "Reproducir"}
               disabled={!canPlay}
               onClick={onToggle}
