@@ -1,4 +1,5 @@
 import { AuthButton } from "@/components/layout/AuthButton";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 
@@ -12,6 +13,9 @@ export function LeftSidebar() {
         <NavLinks />
       </nav>
       <AuthButton />
+      <div className="-mt-6 px-3">
+        <LegalLinks />
+      </div>
     </aside>
   );
 }

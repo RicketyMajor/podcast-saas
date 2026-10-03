@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -172,6 +173,10 @@ export function AuthForm({
           {copy.switchLink}
         </Link>
       </p>
+
+      <div className="text-center">
+        <LegalLinks prefix="Al continuar aceptas las " />
+      </div>
     </div>
   );
 }

@@ -15,6 +15,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Mi perfil", href: "/profile", icon: User, requiresAuth: true },
 ];
 
+// Privacy requests and abuse reports (/privacy, /terms).
+export const CONTACT_EMAIL = "alonsoveralarach@gmail.com";
+
 export const EMPTY_STATES = {
   noPodcasts: {
     title: "Aún no hay podcasts. ¡Publica el primero!",
