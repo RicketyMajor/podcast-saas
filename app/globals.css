@@ -7,8 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-schibsted);
-  --font-heading: var(--font-schibsted);
+  --font-sans: var(--font-geist);
+  --font-heading: var(--font-bricolage);
+  --font-display: var(--font-bricolage);
+  --color-ambient: var(--ambient);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,50 +52,61 @@
 }
 
 /*
- * Waves palette — a radio studio at night: warm charcoal (acoustic foam,
- * walnut cabinets), ivory script paper, and the amber glow of a VU meter.
- * Amber (primary) is reserved for "this is playing / live": progress,
- * active nav, play. Dark-only in the MVP; <html> carries `.dark` so the
- * `dark:` variants inside shadcn components apply. Contrast verified AA.
+ * Waves palette — "ambient cover": a neutral graphite stage that takes its
+ * only saturated color from the cover that is playing (--ambient, set at
+ * runtime by AmbientBackdrop; clamped in OKLCH so it stays AA on graphite).
+ * Primary actions are ivory-white pills; color always means "what you hear".
+ * Dark-only in the MVP; <html> carries `.dark` for shadcn's `dark:` variants.
  */
+@property --ambient {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(0.74 0.11 225);
+}
+
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+  --ambient: oklch(0.74 0.11 225);
 
-  --background: oklch(0.155 0.008 60);
-  --foreground: oklch(0.95 0.012 85);
-  --card: oklch(0.195 0.009 60);
-  --card-foreground: oklch(0.95 0.012 85);
-  --popover: oklch(0.225 0.01 60);
-  --popover-foreground: oklch(0.95 0.012 85);
+  --background: oklch(0.135 0.004 265);
+  --foreground: oklch(0.975 0.003 265);
+  --card: oklch(0.175 0.005 265);
+  --card-foreground: oklch(0.975 0.003 265);
+  --popover: oklch(0.205 0.006 265);
+  --popover-foreground: oklch(0.975 0.003 265);
 
-  --primary: oklch(0.8 0.15 72);
-  --primary-foreground: oklch(0.18 0.02 60);
-  --secondary: oklch(0.26 0.01 60);
-  --secondary-foreground: oklch(0.95 0.012 85);
-  --muted: oklch(0.24 0.009 60);
-  --muted-foreground: oklch(0.72 0.015 75);
-  --accent: oklch(0.27 0.012 60);
-  --accent-foreground: oklch(0.95 0.012 85);
-  --destructive: oklch(0.65 0.19 27);
+  --primary: oklch(0.975 0.003 265);
+  --primary-foreground: oklch(0.16 0.005 265);
+  --secondary: oklch(0.24 0.006 265);
+  --secondary-foreground: oklch(0.975 0.003 265);
+  --muted: oklch(0.225 0.006 265);
+  --muted-foreground: oklch(0.73 0.01 265);
+  --accent: oklch(0.255 0.007 265);
+  --accent-foreground: oklch(0.975 0.003 265);
+  --destructive: oklch(0.66 0.2 25);
 
-  --border: oklch(0.95 0.02 80 / 9%);
-  --input: oklch(0.95 0.02 80 / 13%);
-  --ring: oklch(0.8 0.15 72);
+  --border: oklch(0.975 0.003 265 / 9%);
+  --input: oklch(0.975 0.003 265 / 14%);
+  --ring: oklch(0.975 0.003 265 / 70%);
 
-  --chart-1: oklch(0.8 0.15 72);
-  --chart-2: oklch(0.68 0.13 60);
-  --chart-3: oklch(0.56 0.1 50);
-  --chart-4: oklch(0.44 0.07 45);
-  --chart-5: oklch(0.34 0.04 45);
+  --chart-1: var(--ambient);
+  --chart-2: oklch(0.7 0.08 265);
+  --chart-3: oklch(0.58 0.06 265);
+  --chart-4: oklch(0.46 0.04 265);
+  --chart-5: oklch(0.36 0.02 265);
 
-  --sidebar: oklch(0.155 0.008 60);
-  --sidebar-foreground: oklch(0.95 0.012 85);
-  --sidebar-primary: oklch(0.8 0.15 72);
-  --sidebar-primary-foreground: oklch(0.18 0.02 60);
-  --sidebar-accent: oklch(0.27 0.012 60);
-  --sidebar-accent-foreground: oklch(0.95 0.012 85);
-  --sidebar-border: oklch(0.95 0.02 80 / 9%);
-  --sidebar-ring: oklch(0.8 0.15 72);
+  --sidebar: oklch(0.135 0.004 265);
+  --sidebar-foreground: oklch(0.975 0.003 265);
+  --sidebar-primary: oklch(0.975 0.003 265);
+  --sidebar-primary-foreground: oklch(0.16 0.005 265);
+  --sidebar-accent: oklch(0.255 0.007 265);
+  --sidebar-accent-foreground: oklch(0.975 0.003 265);
+  --sidebar-border: oklch(0.975 0.003 265 / 9%);
+  --sidebar-ring: oklch(0.975 0.003 265 / 70%);
+
+  color-scheme: dark;
+  /* The ambient glow fades between covers instead of cutting. */
+  transition: --ambient 900ms var(--ease-in-out-quart);
 }
 
 @layer base {
@@ -112,10 +127,76 @@
   h1,
   h2,
   h3 {
+    font-family: var(--font-heading);
     text-wrap: balance;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--ambient) 45%, transparent);
+    color: var(--foreground);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.975 0.003 265 / 16%) transparent;
+  }
+  input,
+  textarea {
+    caret-color: var(--ambient);
   }
   p {
     text-wrap: pretty;
+  }
+}
+
+/* Equalizer bars: the "now playing" signal used by the logo, cards and player. */
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Route changes crossfade with a short rise (React <ViewTransition>). */
+::view-transition-old(.page) {
+  animation: 120ms ease-out both vt-fade reverse;
+}
+::view-transition-new(.page) {
+  animation:
+    220ms var(--ease-out-expo) 60ms both vt-fade,
+    320ms var(--ease-out-expo) both vt-rise;
+}
+/* Cover morph between a card and the detail header. */
+::view-transition-group(.cover) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-out-expo);
+}
+::view-transition-image-pair(.cover) {
+  animation-name: vt-blur;
+}
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-rise {
+  from {
+    transform: translateY(12px);
+  }
+}
+@keyframes vt-blur {
+  35% {
+    filter: blur(4px);
+  }
+}
+
+/* Reduced motion keeps the color fade (no movement) but drops spatial moves. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

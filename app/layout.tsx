@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Schibsted_Grotesk } from "next/font/google";
+import { Bricolage_Grotesque, Geist } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
@@ -7,9 +7,16 @@ import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
-const schibsted = Schibsted_Grotesk({
-  variable: "--font-schibsted",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin", "latin-ext"],
+});
+
+// Display face: optical size + width axes let big titles tighten up.
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz", "wdth"],
 });
 
 export const metadata: Metadata = {
@@ -24,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           suppressHydrationWarning: browser extensions inject attributes on <html>. */}
       <html
         lang="es"
-        className={`dark ${schibsted.variable} h-full`}
+        className={`dark ${geist.variable} ${bricolage.variable} h-full`}
         suppressHydrationWarning
       >
         <body className="flex min-h-full flex-col">
