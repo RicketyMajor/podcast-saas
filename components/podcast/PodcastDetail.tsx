@@ -28,7 +28,7 @@ export function PodcastDetail({ podcastId }: { podcastId: string }) {
         podcast={podcast}
         isOwner={me?._id === podcast.authorId}
       />
-      <p className="max-w-prose text-lg text-pretty text-muted-foreground">
+      <p className="max-w-prose text-lg text-pretty text-foreground/80">
         {podcast.description}
       </p>
       <TranscriptView transcript={podcast.transcript} />
@@ -83,13 +83,13 @@ function DetailSkeleton() {
       aria-busy="true"
       aria-label="Cargando podcast"
     >
-      <Skeleton className="aspect-square w-full max-w-62.5 self-center rounded-2xl sm:self-auto" />
+      <Skeleton className="aspect-square w-full max-w-64 self-center rounded-2xl sm:w-56 sm:self-auto lg:w-64" />
       <div className="flex flex-1 flex-col gap-4">
         <Skeleton className="h-5 w-12" />
-        <Skeleton className="h-10 w-3/4" />
+        <Skeleton className="h-14 w-3/4" />
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-4 w-56" />
-        <Skeleton className="h-11 w-36 rounded-full" />
+        <Skeleton className="h-12 w-40 rounded-full" />
       </div>
     </div>
   );

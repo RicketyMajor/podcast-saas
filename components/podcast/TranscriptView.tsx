@@ -35,12 +35,12 @@ export function TranscriptView({ transcript }: { transcript: string }) {
   return (
     <section
       aria-labelledby="transcript-title"
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:p-6"
+      className="flex flex-col gap-4 rounded-3xl bg-card/60 p-5 ring-1 ring-foreground/8 backdrop-blur-md sm:p-8"
     >
       <div className="flex items-center justify-between gap-4">
         <h2
           id="transcript-title"
-          className="text-lg font-semibold tracking-tight"
+          className="text-[1.375rem] font-bold tracking-tight"
         >
           Transcripción
         </h2>
@@ -53,7 +53,7 @@ export function TranscriptView({ transcript }: { transcript: string }) {
         id="transcript-text"
         ref={textRef}
         className={cn(
-          "flex max-w-prose flex-col gap-4 overflow-hidden leading-7 text-pretty",
+          "flex max-w-prose flex-col gap-4 overflow-hidden text-[1.0625rem] leading-7 text-pretty text-foreground/90",
           !expanded && COLLAPSED,
           !expanded && overflows && "mask-b-from-60% mask-b-to-100%",
         )}
@@ -75,7 +75,10 @@ export function TranscriptView({ transcript }: { transcript: string }) {
         >
           <ChevronDown
             aria-hidden
-            className={cn("transition-transform", expanded && "rotate-180")}
+            className={cn(
+              "transition-transform duration-300 ease-out-expo",
+              expanded && "rotate-180",
+            )}
           />
           {expanded ? "Ver menos" : "Ver completa"}
         </Button>
