@@ -1,12 +1,21 @@
 import Google from "@auth/core/providers/google";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
+import { HOUR, RateLimiter } from "@convex-dev/rate-limiter";
 import { ConvexError } from "convex/values";
 
+import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { authorNameOf } from "./lib/auth";
 import { normalizeSearchText } from "./lib/text";
+
+// Every account brings its own daily AI quota, so mass sign-ups could drain
+// the global monthly TTS cap. ponytail: one global bucket, so a burst also
+// blocks real people for a while; per-IP needs an HTTP action in front.
+const signUpLimits = new RateLimiter(components.rateLimiter, {
+  signUp: { kind: "token bucket", rate: 30, period: HOUR },
+});
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_NAME_LENGTH = 60;
@@ -47,6 +56,15 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       // The library types ctx with an untyped data model; ours matches it.
       const ctx = genericCtx as unknown as MutationCtx;
       if (existingUserId === null) {
+        // Throwing here rolls back the new account (same transaction).
+        const { ok } = await signUpLimits.limit(ctx, "signUp");
+        if (!ok) {
+          throw new ConvexError({
+            code: "QUOTA_EXCEEDED",
+            message:
+              "Hay muchos registros en este momento. Inténtalo en un rato.",
+          });
+        }
         await ctx.db.patch("users", userId, { podcastCount: 0, totalViews: 0 });
         return;
       }

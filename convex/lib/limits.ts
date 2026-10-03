@@ -41,3 +41,10 @@ export const SCRIPT_TONES = [
   "entretenido",
   "formal",
 ] as const;
+
+/** A client-supplied list size as an integer in [1, max]; NaN → fallback. */
+export const clampLimit = (
+  limit: number | undefined,
+  fallback: number,
+  max: number,
+) => Math.min(Math.max(Math.trunc(limit ?? fallback) || fallback, 1), max);

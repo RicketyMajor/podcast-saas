@@ -17,6 +17,7 @@ import {
 import { LANGUAGES, VOICES, voiceId, voiceNameOf } from "./ai/voices";
 import { assertOwner, authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
 import {
+  clampLimit,
   COVER_TYPES,
   DEFAULT_SPEAKING_RATE,
   DESCRIPTION_MAX_CHARS,
@@ -70,7 +71,7 @@ export const getTrending = query({
       .query("podcasts")
       .withIndex("by_views")
       .order("desc")
-      .take(Math.min(limit ?? 8, 50));
+      .take(clampLimit(limit, 8, 50));
     return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
   },
 });

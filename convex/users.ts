@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { query } from "./_generated/server";
 import { authorNameOf, getCurrentUser } from "./lib/auth";
+import { clampLimit } from "./lib/limits";
 
 // Public shape: never expose email or other private fields.
 export const current = query({
@@ -71,7 +72,7 @@ export const getTopCreators = query({
       .query("users")
       .withIndex("by_podcast_count", (q) => q.gt("podcastCount", 0))
       .order("desc")
-      .take(Math.min(limit ?? 5, 20));
+      .take(clampLimit(limit, 5, 20));
     return users.map((user) => ({
       _id: user._id,
       name: authorNameOf(user),
