@@ -32,7 +32,7 @@ export function GoogleButton({
     <Button
       type="button"
       variant="outline"
-      size="lg"
+      className="h-12 rounded-full text-base transition-transform active:scale-95"
       onClick={onClick}
       disabled={disabled || pending}
     >

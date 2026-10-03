@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { LegalLinks } from "@/components/layout/LegalLinks";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/shared/PillButton";
 import {
   Field,
   FieldError,
@@ -106,10 +106,12 @@ export function AuthForm({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
+    <div className="flex flex-col gap-7">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-[2rem] leading-tight font-extrabold tracking-[-0.025em]">
+          {copy.title}
+        </h1>
+        <p className="text-muted-foreground">{copy.subtitle}</p>
       </header>
 
       <GoogleButton redirectTo={redirectTo} disabled={pending} />
@@ -124,6 +126,7 @@ export function AuthForm({
               <FieldLabel htmlFor="name">Nombre</FieldLabel>
               <Input
                 id="name"
+                className="h-11"
                 name="name"
                 autoComplete="name"
                 maxLength={MAX_NAME_LENGTH}
@@ -136,6 +139,7 @@ export function AuthForm({
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
+              className="h-11"
               name="email"
               type="email"
               autoComplete="email"
@@ -147,6 +151,7 @@ export function AuthForm({
             <FieldLabel htmlFor="password">Contraseña</FieldLabel>
             <Input
               id="password"
+              className="h-11"
               name="password"
               type="password"
               autoComplete={
@@ -157,10 +162,10 @@ export function AuthForm({
             <FieldError>{errors.password}</FieldError>
           </Field>
           <FieldError>{errors.form}</FieldError>
-          <Button type="submit" size="lg" disabled={pending}>
+          <PillButton type="submit" disabled={pending} className="mt-1">
             {pending && <Loader2 aria-hidden className="animate-spin" />}
             {copy.submit}
-          </Button>
+          </PillButton>
         </FieldGroup>
       </form>
 

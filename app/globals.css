@@ -167,6 +167,13 @@
   }
 }
 
+/* Auth cover wall: each column scrolls by one of its two copies. */
+@keyframes wall-drift {
+  to {
+    transform: translateY(-50%);
+  }
+}
+
 /* Ambient light drift while playing (transform only: composited). */
 @keyframes ambient-drift {
   50% {

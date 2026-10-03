@@ -1,21 +1,37 @@
+import { Sparkles } from "lucide-react";
+
+import { CoverWall } from "@/components/auth/CoverWall";
+import { AmbientBackdrop } from "@/components/layout/AmbientBackdrop";
 import { Logo } from "@/components/layout/Logo";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="grid flex-1 lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between border-r border-border bg-card p-10 lg:flex">
-        <Logo />
-        <div className="flex flex-col gap-4">
-          <p className="text-4xl font-bold tracking-tight text-balance">
-            Crea podcasts con IA en minutos
-          </p>
-          <p className="max-w-sm text-pretty text-muted-foreground">
-            Escribe un guion, elige una voz y publica. Sin micrófono.
-          </p>
+    <div className="relative isolate grid flex-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <AmbientBackdrop />
+      <aside className="relative hidden overflow-hidden border-r border-foreground/8 lg:block">
+        <CoverWall />
+        {/* Graphite veil so the pitch reads over the covers. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-background/10"
+        />
+        <div className="relative flex h-full flex-col justify-between p-10">
+          <Logo />
+          <div className="flex max-w-lg flex-col gap-5">
+            <p className="font-display text-[clamp(2.25rem,3.6vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance">
+              Crea podcasts con IA en minutos
+            </p>
+            <p className="max-w-sm text-lg text-pretty text-foreground/80">
+              Escribe un guion, elige una voz y publica. Sin micrófono.
+            </p>
+            <p className="flex items-center gap-1.5 text-sm text-foreground/75">
+              <Sparkles aria-hidden className="size-4" />
+              Voz generada con IA
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">Voz generada con IA</p>
       </aside>
-      <main className="flex flex-col items-center justify-center gap-8 px-4 py-12">
+      <main className="flex flex-col items-center justify-center gap-10 px-4 py-12">
         <div className="lg:hidden">
           <Logo />
         </div>
