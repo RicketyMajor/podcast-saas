@@ -2,17 +2,9 @@
 
 import Link from "next/link";
 
+import { WAVE_BARS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player-store";
-
-// Five bars drawn as a wave; they ripple only while something is playing.
-export const WAVE_BARS = [
-  { x: 1, h: 8, delay: "-0.2s" },
-  { x: 6, h: 16, delay: "-0.6s" },
-  { x: 11, h: 22, delay: "0s" },
-  { x: 16, h: 14, delay: "-0.4s" },
-  { x: 21, h: 6, delay: "-0.8s" },
-];
 
 /** The wave mark alone, at any size (`className` sets it). */
 export function WaveMark({ className }: { className?: string }) {

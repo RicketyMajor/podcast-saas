@@ -6,6 +6,7 @@ export default function Loading() {
   return (
     <div
       className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-8"
+      role="status"
       aria-busy="true"
       aria-label="Cargando podcast"
     >

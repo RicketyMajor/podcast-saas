@@ -19,6 +19,7 @@ export function TopCreators() {
       </h2>
       {creators === undefined ? (
         <div
+          role="status"
           aria-busy="true"
           aria-label="Cargando creadores"
           className="flex flex-col gap-2"

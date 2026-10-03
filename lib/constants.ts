@@ -15,6 +15,16 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Mi perfil", href: "/profile", icon: User, requiresAuth: true },
 ];
 
+// The logo's five bars drawn as a wave (viewBox 25×24). Here, not in the
+// client Logo module, so server components (404) can read the array too.
+export const WAVE_BARS = [
+  { x: 1, h: 8, delay: "-0.2s" },
+  { x: 6, h: 16, delay: "-0.6s" },
+  { x: 11, h: 22, delay: "0s" },
+  { x: 16, h: 14, delay: "-0.4s" },
+  { x: 21, h: 6, delay: "-0.8s" },
+];
+
 // Privacy requests and abuse reports (/privacy, /terms).
 export const CONTACT_EMAIL = "alonsoveralarach@gmail.com";
 

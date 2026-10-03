@@ -85,6 +85,7 @@ function ProfileSkeleton() {
   return (
     <div
       className="flex flex-col items-center gap-6 sm:flex-row sm:items-end sm:gap-8"
+      role="status"
       aria-busy="true"
       aria-label="Cargando perfil"
     >

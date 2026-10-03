@@ -78,6 +78,7 @@ export function PodcastShelf({
       {podcasts === undefined ? (
         <div
           className="flex gap-4 overflow-hidden"
+          role="status"
           aria-busy="true"
           aria-label="Cargando podcasts"
         >

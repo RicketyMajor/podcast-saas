@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AmbientBackdrop } from "@/components/layout/AmbientBackdrop";
-import { Logo, WAVE_BARS } from "@/components/layout/Logo";
+import { Logo } from "@/components/layout/Logo";
 import { PillButton } from "@/components/shared/PillButton";
+import { WAVE_BARS } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Página no encontrada" };
 
@@ -16,7 +17,9 @@ export default function NotFound() {
   return (
     <div className="relative isolate flex flex-1 flex-col px-4 py-6 sm:px-10 sm:py-8">
       <AmbientBackdrop />
-      <Logo />
+      <header>
+        <Logo />
+      </header>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 py-16 text-center">
         {/* The wave mark, gone silent: its bars settle flat on arrival. */}
         <svg

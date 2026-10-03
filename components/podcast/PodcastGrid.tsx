@@ -19,7 +19,12 @@ export function PodcastGrid({
 }) {
   if (podcasts === undefined) {
     return (
-      <div className={GRID} aria-busy="true" aria-label="Cargando podcasts">
+      <div
+        className={GRID}
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando podcasts"
+      >
         {Array.from({ length: skeletons }, (_, i) => (
           <PodcastCardSkeleton key={i} />
         ))}
