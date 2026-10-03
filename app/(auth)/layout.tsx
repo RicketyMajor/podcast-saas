@@ -13,7 +13,11 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         {/* Graphite veil so the pitch reads over the covers. */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-background/10"
+          className="absolute inset-0 bg-linear-to-t from-background from-10% via-background/60 via-40% to-transparent to-70%"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-36 bg-linear-to-b from-background/90 to-transparent"
         />
         <div className="relative flex h-full flex-col justify-between p-10">
           <Logo />

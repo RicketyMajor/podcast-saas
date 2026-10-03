@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 
 const COLUMNS = 3;
-const MIN_COVERS = 6; // fewer and the wall repeats itself: show the wave
 const COLUMN_MIN_ITEMS = 6;
 
 /**
@@ -24,26 +23,30 @@ export function CoverWall() {
   usePageCover(covers?.[0]);
 
   if (covers === undefined) return null;
-  if (covers.length < MIN_COVERS) {
+  if (covers.length === 0) {
     return (
-      <div aria-hidden className="absolute inset-0 grid place-items-center">
-        <WaveMark className="h-40 w-42 opacity-80" />
+      <div aria-hidden className="absolute inset-0 grid place-items-center pb-40">
+        <WaveMark className="h-40 w-42" />
       </div>
     );
   }
 
-  // One copy of a column must outgrow the panel, so short columns repeat.
-  const columns = Array.from({ length: COLUMNS }, (_, c) => {
-    const own = covers.filter((_, i) => i % COLUMNS === c);
-    return Array.from(
-      { length: Math.max(COLUMN_MIN_ITEMS, own.length) },
-      (_, i) => own[i % own.length]!,
-    );
-  });
+  // Columns deal covers round-robin from a cycle, so a short catalog still
+  // fills the wall (one copy of a column must outgrow the panel).
+  const perColumn = Math.max(
+    COLUMN_MIN_ITEMS,
+    Math.ceil(covers.length / COLUMNS),
+  );
+  const columns = Array.from({ length: COLUMNS }, (_, c) =>
+    Array.from(
+      { length: perColumn },
+      (_, i) => covers[(c + i * COLUMNS) % covers.length]!,
+    ),
+  );
   return (
     <div
       aria-hidden
-      className="absolute inset-0 grid -rotate-6 grid-cols-3 gap-4 overflow-hidden px-6 opacity-70 mask-y-from-60% mask-y-to-100% [scale:1.25]"
+      className="absolute inset-0 grid [scale:1.25] -rotate-6 grid-cols-3 gap-4 overflow-hidden mask-y-from-60% mask-y-to-100% px-6 opacity-70"
     >
       {columns.map((column, c) => (
         <div
@@ -59,7 +62,13 @@ export function CoverWall() {
               key={i}
               className="relative aspect-square shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-1 shadow-black/60 ring-foreground/10"
             >
-              <Image src={url} alt="" fill sizes="200px" className="object-cover" />
+              <Image
+                src={url}
+                alt=""
+                fill
+                sizes="200px"
+                className="object-cover"
+              />
             </div>
           ))}
         </div>
