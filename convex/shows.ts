@@ -20,10 +20,10 @@ import {
   TITLE_MIN_CHARS,
 } from "./lib/limits";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
+import { invalid, text } from "./lib/validation";
 
 // The "Shows" section above the episode results.
 const SHOW_SEARCH_RESULTS = 6;
-import { invalid, text } from "./lib/validation";
 
 // What lists, cards and the create form's show picker need.
 const showCard = v.object({
@@ -97,11 +97,26 @@ export const getByAuthor = query({
   },
 });
 
-// An empty show has nothing to play: discovery lists skip it. Its totalViews
-// is 0 (moving or deleting episodes takes their views along), so empties sit
-// at the tail of by_views.
-// ponytail: reads 2× and filters, so a row can come up short when many shows
-// are empty; an index on a "listed" flag fixes it if that ever happens.
+// An empty show has nothing to play: discovery lists skip it. Both lists
+// read 2× what they return and drop the empties.
+// ponytail: an empty show has 0 views (moving or deleting episodes takes
+// their views along), so it can only crowd out shows that were never played
+// (ties at 0 come newest first) or, in search, weaker matches. A flood of new
+// empty shows can leave a row short; the fix is a `listed` flag kept by the
+// episode mutations, indexed with totalViews and as a search filterField.
+async function listedCards(
+  ctx: QueryCtx,
+  shows: Doc<"shows">[],
+  limit: number,
+) {
+  return await Promise.all(
+    shows
+      .filter((show) => show.episodeCount > 0)
+      .slice(0, limit)
+      .map((show) => toCard(ctx, show)),
+  );
+}
+
 export const getPopular = query({
   args: { limit: v.optional(v.number()) },
   returns: v.array(showCard),
@@ -112,16 +127,11 @@ export const getPopular = query({
       .withIndex("by_views")
       .order("desc")
       .take(take * 2);
-    return await Promise.all(
-      shows
-        .filter((show) => show.episodeCount > 0)
-        .slice(0, take)
-        .map((show) => toCard(ctx, show)),
-    );
+    return await listedCards(ctx, shows, take);
   },
 });
 
-// searchText = normalized title + author. Same 2× read as getPopular.
+// searchText = normalized title + author.
 export const search = query({
   args: { query: v.string() },
   returns: v.array(showCard),
@@ -132,12 +142,7 @@ export const search = query({
       .query("shows")
       .withSearchIndex("search_text", (q) => q.search("searchText", query))
       .take(SHOW_SEARCH_RESULTS * 2);
-    return await Promise.all(
-      shows
-        .filter((show) => show.episodeCount > 0)
-        .slice(0, SHOW_SEARCH_RESULTS)
-        .map((show) => toCard(ctx, show)),
-    );
+    return await listedCards(ctx, shows, SHOW_SEARCH_RESULTS);
   },
 });
 
