@@ -25,6 +25,21 @@ export function usable(
   );
 }
 
+/** Whether a show or a podcast already uses this file as its cover. */
+export async function coverInUse(ctx: QueryCtx, storageId: Id<"_storage">) {
+  const [show, podcast] = await Promise.all([
+    ctx.db
+      .query("shows")
+      .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
+      .first(),
+    ctx.db
+      .query("podcasts")
+      .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
+      .first(),
+  ]);
+  return show !== null || podcast !== null;
+}
+
 // The client never decides where a cover comes from: either the user's own
 // AI image, or an uploaded image that passes the same checks as the form
 // (ADR-020).
@@ -42,17 +57,14 @@ export async function checkCover(
   }
   // ponytail: an unpublished upload isn't tied to its uploader; someone who
   // learns its id could publish it first. A published one can't be taken
-  // (by_image), so deleting a podcast never deletes another podcast's cover.
-  const [file, owner] = await Promise.all([
+  // (by_image), so deleting a podcast or show never deletes another's cover.
+  const [file, inUse] = await Promise.all([
     ctx.db.system.get("_storage", storageId),
-    ctx.db
-      .query("podcasts")
-      .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
-      .first(),
+    coverInUse(ctx, storageId),
   ]);
   if (
     file === null ||
-    owner !== null ||
+    inUse ||
     !COVER_TYPES.includes(file.contentType ?? "") ||
     file.size > UPLOAD_MAX_MB * 1024 * 1024
   ) {

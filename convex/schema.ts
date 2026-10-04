@@ -21,7 +21,31 @@ export default defineSchema({
     .index("phone", ["phone"])
     .index("by_podcast_count", ["podcastCount"]),
 
+  // A program that groups episodes; one RSS feed per show (phase 19).
+  shows: defineTable({
+    authorId: v.id("users"),
+    authorName: v.string(), // denormalized, like podcasts.authorName
+    title: v.string(),
+    description: v.string(),
+    languageCode: v.string(), // default for its new episodes
+    category: v.string(), // Apple Podcasts text, one of SHOW_CATEGORIES
+    explicit: v.boolean(),
+    imageStorageId: v.id("_storage"),
+    imageSource: v.union(v.literal("ai"), v.literal("upload")),
+    imagePrompt: v.optional(v.string()),
+    // Denormalized counters, updated with the episode changes.
+    episodeCount: v.number(),
+    totalViews: v.number(),
+    searchText: v.string(), // normalizeSearchText(`${title} ${authorName}`)
+  })
+    .index("by_author", ["authorId"])
+    .index("by_views", ["totalViews"])
+    .index("by_image", ["imageStorageId"]) // a cover belongs to one show or podcast
+    .searchIndex("search_text", { searchField: "searchText" }),
+
   podcasts: defineTable({
+    // Optional only until backfillShows runs in every deployment (ADR-029).
+    showId: v.optional(v.id("shows")),
     authorId: v.id("users"),
     authorName: v.string(),
     authorImageUrl: v.string(),
@@ -34,12 +58,14 @@ export default defineSchema({
     speakingRate: v.optional(v.number()), // Chirp 3 HD pace, 0.25–2.0
     audioStorageId: v.id("_storage"),
     audioDurationSec: v.number(),
-    imageStorageId: v.id("_storage"),
-    imageSource: v.union(v.literal("ai"), v.literal("upload")),
+    // No own cover = the show's cover. Source and prompt go with the file.
+    imageStorageId: v.optional(v.id("_storage")),
+    imageSource: v.optional(v.union(v.literal("ai"), v.literal("upload"))),
     imagePrompt: v.optional(v.string()),
     views: v.number(),
-    searchText: v.string(), // normalizeSearchText(`${title} ${authorName}`)
+    searchText: v.string(), // searchTextOf(title, authorName, show title)
   })
+    .index("by_show", ["showId"])
     .index("by_author", ["authorId"])
     .index("by_views", ["views"])
     .index("by_language", ["languageCode"])

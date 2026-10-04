@@ -5,10 +5,10 @@ import { HOUR, RateLimiter } from "@convex-dev/rate-limiter";
 import { ConvexError } from "convex/values";
 
 import { components } from "./_generated/api";
-import type { DataModel } from "./_generated/dataModel";
+import type { DataModel, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { authorNameOf } from "./lib/auth";
-import { normalizeSearchText } from "./lib/text";
+import { searchTextOf } from "./lib/text";
 
 // Every account brings its own daily AI quota, so mass sign-ups could drain
 // the global monthly TTS cap. ponytail: one global bucket, so a burst also
@@ -69,11 +69,22 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         return;
       }
       // Google refreshes name and avatar on every sign-in: copy them to the
-      // denormalized fields of the user's podcasts when they changed.
+      // denormalized fields of the user's shows and podcasts when they changed.
       const user = await ctx.db.get("users", userId);
       if (user === null) return;
       const authorName = authorNameOf(user);
       const authorImageUrl = user.image ?? "";
+      const showTitles = new Map<Id<"shows">, string>();
+      for await (const show of ctx.db
+        .query("shows")
+        .withIndex("by_author", (q) => q.eq("authorId", userId))) {
+        showTitles.set(show._id, show.title);
+        if (show.authorName === authorName) continue;
+        await ctx.db.patch("shows", show._id, {
+          authorName,
+          searchText: searchTextOf(show.title, authorName),
+        });
+      }
       for await (const podcast of ctx.db
         .query("podcasts")
         .withIndex("by_author", (q) => q.eq("authorId", userId))) {
@@ -86,7 +97,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         await ctx.db.patch("podcasts", podcast._id, {
           authorName,
           authorImageUrl,
-          searchText: normalizeSearchText(`${podcast.title} ${authorName}`),
+          searchText: searchTextOf(
+            podcast.title,
+            authorName,
+            podcast.showId && showTitles.get(podcast.showId),
+          ),
         });
       }
     },

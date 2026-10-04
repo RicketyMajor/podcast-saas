@@ -28,6 +28,7 @@ import type * as lib_limits from "../lib/limits.js";
 import type * as lib_text from "../lib/text.js";
 import type * as lib_validation from "../lib/validation.js";
 import type * as podcasts from "../podcasts.js";
+import type * as shows from "../shows.js";
 import type * as users from "../users.js";
 
 import type {
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   "lib/text": typeof lib_text;
   "lib/validation": typeof lib_validation;
   podcasts: typeof podcasts;
+  shows: typeof shows;
   users: typeof users;
 }>;
 

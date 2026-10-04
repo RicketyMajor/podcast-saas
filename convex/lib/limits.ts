@@ -48,3 +48,30 @@ export const clampLimit = (
   fallback: number,
   max: number,
 ) => Math.min(Math.max(Math.trunc(limit ?? fallback) || fallback, 1), max);
+
+// Shows (ADR-029). The select in the create form lists up to this many.
+export const MAX_SHOWS_PER_USER = 50;
+// Apple Podcasts top-level categories, verified 2026-10-04 against
+// podcasters.apple.com/support/1691; `value` goes verbatim into the RSS feed.
+export const SHOW_CATEGORIES = [
+  { value: "Arts", label: "Arte" },
+  { value: "Business", label: "Negocios" },
+  { value: "Comedy", label: "Comedia" },
+  { value: "Education", label: "Educación" },
+  { value: "Fiction", label: "Ficción" },
+  { value: "Government", label: "Gobierno" },
+  { value: "History", label: "Historia" },
+  { value: "Health & Fitness", label: "Salud y bienestar" },
+  { value: "Kids & Family", label: "Niños y familia" },
+  { value: "Leisure", label: "Ocio" },
+  { value: "Music", label: "Música" },
+  { value: "News", label: "Noticias" },
+  { value: "Religion & Spirituality", label: "Religión y espiritualidad" },
+  { value: "Science", label: "Ciencia" },
+  { value: "Society & Culture", label: "Sociedad y cultura" },
+  { value: "Sports", label: "Deportes" },
+  { value: "Technology", label: "Tecnología" },
+  { value: "True Crime", label: "Crímenes reales" },
+  { value: "TV & Film", label: "Cine y televisión" },
+] as const;
+export const DEFAULT_SHOW_CATEGORY = "Society & Culture";

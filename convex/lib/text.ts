@@ -12,6 +12,14 @@ export function normalizeSearchText(text: string): string {
 }
 
 /**
+ * What the search index sees: episodes pass (title, author, show title) and
+ * shows (title, author), so a creator's or show's name finds them.
+ */
+export function searchTextOf(...parts: (string | undefined)[]): string {
+  return normalizeSearchText(parts.filter(Boolean).join(" "));
+}
+
+/**
  * Cleans an AI-written script for TTS: drops markdown marks, keeps paragraphs,
  * and cuts at the last paragraph or sentence end that fits in maxChars.
  */

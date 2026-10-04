@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import { internalMutation, query, type QueryCtx } from "../_generated/server";
 import { getCurrentUser } from "../lib/auth";
+import { coverInUse } from "../lib/covers";
 import {
   DAILY_AUDIO_GENERATIONS,
   DAILY_IMAGE_GENERATIONS,
@@ -121,7 +122,7 @@ export const reserveGeneration = internalMutation({
 /**
  * Daily cron: deletes files nobody published, created 24 h to 7 days ago.
  * A file is an orphan if its generation was never consumed, or if it has no
- * generation (an upload) and no podcast uses it as cover. The window keeps
+ * generation (an upload) and no podcast or show uses it as cover. The window keeps
  * each run small and survives a few missed runs. The generation row stays,
  * without its file, as cost history.
  */
@@ -149,10 +150,7 @@ export const cleanupOrphans = internalMutation({
         .unique();
       const orphan = generation
         ? !generation.consumed
-        : (await ctx.db
-            .query("podcasts")
-            .withIndex("by_image", (q) => q.eq("imageStorageId", file._id))
-            .first()) === null;
+        : !(await coverInUse(ctx, file._id));
       if (!orphan) continue;
       orphans.push(file._id);
       if (dryRun) continue;
