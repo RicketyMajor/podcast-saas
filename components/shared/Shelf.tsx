@@ -2,23 +2,26 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { PodcastCard, type PodcastCardData } from "./PodcastCard";
-
 const ITEM = "w-40 shrink-0 snap-start sm:w-48";
 
 /** Horizontal, snap-scrolling row. Reorders glide in place (FLIP). */
-export function PodcastShelf({
+export function Shelf<T extends { _id: string }>({
   title,
-  podcasts,
+  items,
+  renderItem,
 }: {
   title: string;
-  podcasts: PodcastCardData[] | undefined;
+  /** `undefined` = loading (skeletons). */
+  items: T[] | undefined;
+  renderItem: (item: T) => ReactNode;
 }) {
+  // Several shelves can share a page: each labels itself with its own id.
+  const titleId = useId();
   const listRef = useRef<HTMLUListElement>(null);
   // Arrows reflect what's actually scrollable: disabled at each end.
   const [edges, setEdges] = useState({ start: true, end: true });
@@ -37,19 +40,16 @@ export function PodcastShelf({
     const observer = new ResizeObserver(measure);
     observer.observe(list);
     return () => observer.disconnect();
-  }, [podcasts]);
+  }, [items]);
   const scroll = (dir: 1 | -1) => {
     const list = listRef.current;
     list?.scrollBy({ left: dir * list.clientWidth * 0.8, behavior: "smooth" });
   };
 
   return (
-    <section aria-labelledby="shelf-title" className="flex flex-col gap-5">
+    <section aria-labelledby={titleId} className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
-        <h2
-          id="shelf-title"
-          className="text-[1.375rem] font-bold tracking-tight"
-        >
+        <h2 id={titleId} className="text-[1.375rem] font-bold tracking-tight">
           {title}
         </h2>
         <div className="hidden gap-1 sm:flex">
@@ -75,12 +75,12 @@ export function PodcastShelf({
           </Button>
         </div>
       </div>
-      {podcasts === undefined ? (
+      {items === undefined ? (
         <div
           className="flex gap-4 overflow-hidden"
           role="status"
           aria-busy="true"
-          aria-label="Cargando podcasts"
+          aria-label={`Cargando ${title}`}
         >
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className={`${ITEM} flex flex-col gap-3`}>
@@ -90,15 +90,16 @@ export function PodcastShelf({
           ))}
         </div>
       ) : (
-        // Negative margin + padding: hover lift and focus rings aren't clipped.
+        // Negative margin + padding: hover lift, focus rings and the show stack
+        // (ShowCard) aren't clipped.
         <ul
           ref={listRef}
           onScroll={measure}
-          className="-mx-4 -my-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-4 overflow-x-auto overscroll-x-contain px-4 py-3 lg:-mx-10 lg:scroll-px-10 lg:px-10"
+          className="-mx-4 -my-5 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-4 overflow-x-auto overscroll-x-contain px-4 py-5 lg:-mx-10 lg:scroll-px-10 lg:px-10"
         >
-          {podcasts.map((podcast, i) => (
+          {items.map((item, i) => (
             <motion.li
-              key={podcast._id}
+              key={item._id}
               layout="position"
               initial={{ x: 24 }}
               animate={{ x: 0 }}
@@ -109,7 +110,7 @@ export function PodcastShelf({
               }}
               className={ITEM}
             >
-              <PodcastCard podcast={podcast} />
+              {renderItem(item)}
             </motion.li>
           ))}
         </ul>

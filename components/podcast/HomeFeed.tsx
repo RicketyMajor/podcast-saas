@@ -11,30 +11,36 @@ import Link from "next/link";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PillButton } from "@/components/shared/PillButton";
+import { Shelf } from "@/components/shared/Shelf";
+import { ShowCard } from "@/components/show/ShowCard";
 import { api } from "@/convex/_generated/api";
 import { EMPTY_STATES } from "@/lib/constants";
 
 import { HomeHero } from "./HomeHero";
+import { PodcastCard } from "./PodcastCard";
 import { PodcastGrid } from "./PodcastGrid";
-import { PodcastShelf } from "./PodcastShelf";
 
 const PAGE_SIZE = 8;
 
 // Also the default /discover view, with its own titles (screens.md §2.5).
 export function HomeFeed({
   preloadedTrending,
+  preloadedShows,
   trendingTitle = "Tendencias",
   latestTitle = "Recientes",
   featured = false,
 }: {
   /** Loaded on the server, so the hero (the LCP) ships in the HTML. */
   preloadedTrending: Preloaded<typeof api.podcasts.getTrending>;
+  /** Also from the server, so an empty row never flashes in and out. */
+  preloadedShows: Preloaded<typeof api.shows.getPopular>;
   trendingTitle?: string;
   latestTitle?: string;
   /** Home: #1 trending as the hero, the rest as a shelf. */
   featured?: boolean;
 }) {
   const trending = usePreloadedQuery(preloadedTrending);
+  const shows = usePreloadedQuery(preloadedShows);
   const latest = usePaginatedQuery(
     api.podcasts.getLatest,
     {},
@@ -64,9 +70,17 @@ export function HomeFeed({
       {featured && trending[0] && <HomeHero podcast={trending[0]} />}
       {/* Home: the hero takes #1, so the shelf starts at #2. */}
       {!(featured && trending.length === 1) && (
-        <PodcastShelf
+        <Shelf
           title={trendingTitle}
-          podcasts={featured ? trending.slice(1) : trending}
+          items={featured ? trending.slice(1) : trending}
+          renderItem={(podcast) => <PodcastCard podcast={podcast} />}
+        />
+      )}
+      {shows.length > 0 && (
+        <Shelf
+          title="Shows populares"
+          items={shows}
+          renderItem={(show) => <ShowCard show={show} />}
         />
       )}
       <section className="flex flex-col gap-5">

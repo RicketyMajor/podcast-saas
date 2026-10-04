@@ -8,6 +8,14 @@ import { api } from "@/convex/_generated/api";
 
 export const metadata: Metadata = { title: "Descubrir" };
 
+async function preloadFeed() {
+  const [preloadedTrending, preloadedShows] = await Promise.all([
+    preloadQuery(api.podcasts.getTrending, { limit: 12 }),
+    preloadQuery(api.shows.getPopular, { limit: 12 }),
+  ]);
+  return { preloadedTrending, preloadedShows };
+}
+
 export default async function DiscoverPage({
   searchParams,
 }: PageProps<"/discover">) {
@@ -22,9 +30,7 @@ export default async function DiscoverPage({
         <SearchResults term={term} />
       ) : (
         <HomeFeed
-          preloadedTrending={await preloadQuery(api.podcasts.getTrending, {
-            limit: 12,
-          })}
+          {...await preloadFeed()}
           trendingTitle="Populares"
           latestTitle="Todos los podcasts"
         />
