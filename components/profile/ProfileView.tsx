@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { Home, ListMusic, Mic, Plus, Radio, UserX } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { PodcastGrid } from "@/components/podcast/PodcastGrid";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -27,18 +28,31 @@ export function ProfileView({ profileId }: { profileId: string }) {
   );
   const me = useQuery(api.users.current);
 
+  const isOwner = !!profile && me?._id === profile._id;
+  // Visitors only see shows with something to play; the owner sees all of
+  // theirs (it's their "my shows" list).
+  const listed = useMemo(
+    () => shows?.filter((show) => isOwner || show.episodeCount > 0),
+    [shows, isOwner],
+  );
+
   if (profile === undefined) return <ProfileSkeleton />;
   if (profile === null) return <ProfileNotFound />;
 
-  const isOwner = me?._id === profile._id;
-  // Visitors only see shows with something to play; the owner sees all of
-  // theirs (it's their "my shows" list).
-  const listed = shows?.filter((show) => isOwner || show.episodeCount > 0);
+  // Who is looking and what there is pick the layout: wait for both
+  // instead of flashing the wrong empty state.
+  const ready =
+    me !== undefined && listed !== undefined && podcasts !== undefined;
 
   return (
     <div className="flex flex-col gap-10">
       <ProfileHeader profile={profile} podcasts={podcasts} isOwner={isOwner} />
-      {isOwner && shows?.length === 0 ? (
+      {!ready ? (
+        <PodcastGrid
+          podcasts={undefined}
+          skeletons={Math.min(profile.podcastCount, 8) || 4}
+        />
+      ) : isOwner && listed.length === 0 ? (
         // No show yet means no episode either: one step, one action.
         <EmptyState
           icon={ListMusic}
@@ -53,15 +67,14 @@ export function ProfileView({ profileId }: { profileId: string }) {
             </PillButton>
           }
         />
-      ) : !isOwner && profile.podcastCount === 0 ? (
-        // Without episodes, every show of theirs is empty: nothing to list.
+      ) : listed.length === 0 && podcasts.length === 0 ? (
         <EmptyState
           icon={Radio}
           title={`${profile.name} aún no ha publicado podcasts`}
         />
       ) : (
         <>
-          {listed?.length !== 0 && (
+          {listed.length > 0 && (
             <Shelf
               title={`Shows de ${profile.name}`}
               items={listed}
@@ -70,7 +83,9 @@ export function ProfileView({ profileId }: { profileId: string }) {
           )}
           <section className="flex flex-col gap-5">
             <SectionHeader title="Episodios recientes" />
-            {podcasts?.length === 0 ? (
+            {podcasts.length > 0 ? (
+              <PodcastGrid podcasts={podcasts} />
+            ) : isOwner ? (
               <EmptyState
                 icon={Mic}
                 title="Todavía no has publicado episodios"
@@ -85,9 +100,9 @@ export function ProfileView({ profileId }: { profileId: string }) {
                 }
               />
             ) : (
-              <PodcastGrid
-                podcasts={podcasts}
-                skeletons={Math.min(profile.podcastCount, 8) || 4}
+              <EmptyState
+                icon={Radio}
+                title={`${profile.name} aún no ha publicado episodios`}
               />
             )}
           </section>
