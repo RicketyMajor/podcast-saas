@@ -17,20 +17,25 @@ import {
 import { LANGUAGES, VOICES, voiceId, voiceNameOf } from "./ai/voices";
 import { assertOwner, authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
 import {
+  checkCover,
+  generationOf,
+  markConsumed,
+  promptOf,
+  usable,
+} from "./lib/covers";
+import {
   clampLimit,
-  COVER_TYPES,
   DEFAULT_SPEAKING_RATE,
   DESCRIPTION_MAX_CHARS,
   DESCRIPTION_MIN_CHARS,
-  IMAGE_PROMPT_MAX_CHARS,
   SCRIPT_MAX_CHARS,
   SCRIPT_MIN_CHARS,
   SPEAKING_RATES,
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
-  UPLOAD_MAX_MB,
 } from "./lib/limits";
 import { normalizeSearchText } from "./lib/text";
+import { invalid, text } from "./lib/validation";
 
 // What lists and cards need: no transcript, URLs already resolved.
 const podcastCard = v.object({
@@ -203,18 +208,6 @@ export const getSimilar = query({
   },
 });
 
-function invalid(message: string) {
-  return new ConvexError({ code: "VALIDATION", message });
-}
-
-function text(value: string, label: string, min: number, max: number) {
-  const trimmed = value.trim();
-  if (trimmed.length < min || trimmed.length > max) {
-    throw invalid(`${label} debe tener entre ${min} y ${max} caracteres.`);
-  }
-  return trimmed;
-}
-
 // Editable fields, shared by create and update.
 const podcastFields = {
   title: v.string(),
@@ -260,31 +253,8 @@ function checkFields(args: {
   };
 }
 
-async function generationOf(ctx: QueryCtx, storageId: Id<"_storage">) {
-  return await ctx.db
-    .query("aiGenerations")
-    .withIndex("by_storage", (q) => q.eq("storageId", storageId))
-    .unique();
-}
-
-/** A successful, unused generation of this kind that belongs to the user. */
-function usable(
-  generation: Doc<"aiGenerations"> | null,
-  userId: Id<"users">,
-  kind: Doc<"aiGenerations">["kind"],
-) {
-  return (
-    generation !== null &&
-    generation.userId === userId &&
-    generation.kind === kind &&
-    generation.status === "success" &&
-    !generation.consumed
-  );
-}
-
 // The client never decides where files come from: the audio must be the
-// user's own TTS output, and the cover either their AI image or an uploaded
-// image that passes the same checks as the form (ADR-020).
+// user's own TTS output (covers: lib/covers.ts, ADR-020).
 async function checkAudio(
   ctx: QueryCtx,
   userId: Id<"users">,
@@ -294,57 +264,11 @@ async function checkAudio(
   // stale new audio is only blocked in the UI; store a script hash on the
   // generation if that needs enforcing server-side.
   const audio = await generationOf(ctx, storageId);
-  if (!usable(audio, userId, "audio") || audio?.outputSeconds === undefined) {
+  if (!usable(audio, userId, "audio") || audio.outputSeconds === undefined) {
     throw invalid("El audio no es válido. Vuelve a generarlo.");
   }
   return { generation: audio, durationSec: audio.outputSeconds };
 }
-
-async function checkCover(
-  ctx: QueryCtx,
-  userId: Id<"users">,
-  storageId: Id<"_storage">,
-) {
-  const generation = await generationOf(ctx, storageId);
-  if (generation !== null) {
-    if (!usable(generation, userId, "image")) {
-      throw invalid("La portada no es válida. Vuelve a generarla.");
-    }
-    return { generation, imageSource: "ai" as const };
-  }
-  // ponytail: an unpublished upload isn't tied to its uploader; someone who
-  // learns its id could publish it first. A published one can't be taken
-  // (by_image), so deleting a podcast never deletes another podcast's cover.
-  const [file, owner] = await Promise.all([
-    ctx.db.system.get("_storage", storageId),
-    ctx.db
-      .query("podcasts")
-      .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
-      .first(),
-  ]);
-  if (
-    file === null ||
-    owner !== null ||
-    !COVER_TYPES.includes(file.contentType ?? "") ||
-    file.size > UPLOAD_MAX_MB * 1024 * 1024
-  ) {
-    throw invalid("La portada no es válida. Sube una imagen PNG, JPG o WebP.");
-  }
-  return { generation: null, imageSource: "upload" as const };
-}
-
-/** Keeps cleanupOrphans (phase 13) away from published files. */
-async function markConsumed(
-  ctx: MutationCtx,
-  generation: Doc<"aiGenerations"> | null,
-) {
-  if (generation) {
-    await ctx.db.patch("aiGenerations", generation._id, { consumed: true });
-  }
-}
-
-const promptOf = (source: "ai" | "upload", prompt: string | undefined) =>
-  source === "ai" ? prompt?.trim().slice(0, IMAGE_PROMPT_MAX_CHARS) : undefined;
 
 export const create = mutation({
   args: {

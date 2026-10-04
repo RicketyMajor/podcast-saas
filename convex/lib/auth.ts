@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 
 // MutationCtx and ActionCtx-backed queries extend QueryCtx, so this covers both.
@@ -21,11 +21,15 @@ export async function getCurrentUserOrThrow(ctx: QueryCtx) {
   return user;
 }
 
-export function assertOwner(podcast: Doc<"podcasts">, user: Doc<"users">) {
-  if (podcast.authorId !== user._id) {
+/** Podcasts and shows: only their author may change them. */
+export function assertOwner(
+  doc: { authorId: Id<"users"> },
+  user: Doc<"users">,
+) {
+  if (doc.authorId !== user._id) {
     throw new ConvexError({
       code: "FORBIDDEN",
-      message: "No tienes permiso para modificar este podcast.",
+      message: "No tienes permiso para modificar este contenido.",
     });
   }
 }
