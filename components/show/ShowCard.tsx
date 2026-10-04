@@ -56,7 +56,8 @@ export function ShowCard({
               src={show.imageUrl}
               alt=""
               fill
-              sizes="(min-width: 1536px) 20vw, (min-width: 768px) 30vw, 50vw"
+              // Always a shelf item: w-40, sm:w-48 (Shelf).
+              sizes="(min-width: 640px) 192px, 160px"
               className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.05] motion-reduce:transition-none"
             />
           ) : (
