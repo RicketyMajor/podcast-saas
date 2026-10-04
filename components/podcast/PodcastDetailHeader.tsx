@@ -140,7 +140,7 @@ export function PodcastDetailHeader({
             <h1 className="font-display text-[clamp(2rem,4.4vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] break-words">
               {podcast.title}
             </h1>
-            {podcast.showId && podcast.showTitle && (
+            {podcast.showTitle && (
               <Link
                 href={`/shows/${podcast.showId}`}
                 className="-my-2 inline-flex min-h-11 w-fit max-w-full items-center rounded-full text-lg whitespace-pre text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"

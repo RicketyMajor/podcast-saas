@@ -100,7 +100,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           searchText: searchTextOf(
             podcast.title,
             authorName,
-            podcast.showId && showTitles.get(podcast.showId),
+            showTitles.get(podcast.showId),
           ),
         });
       }

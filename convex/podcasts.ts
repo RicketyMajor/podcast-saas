@@ -58,8 +58,7 @@ async function coverUrl(
   show?: Doc<"shows"> | null,
 ) {
   if (p.imageStorageId) return await ctx.storage.getUrl(p.imageStorageId);
-  const owner =
-    show !== undefined ? show : p.showId && (await ctx.db.get(p.showId));
+  const owner = show !== undefined ? show : await ctx.db.get("shows", p.showId);
   return owner ? await ctx.storage.getUrl(owner.imageStorageId) : null;
 }
 
@@ -172,9 +171,8 @@ const podcastDetail = v.object({
   voiceName: v.string(),
   speakingRate: v.number(),
   audioDurationSec: v.number(),
-  // Null until backfillShows runs (phase 17 deploy window).
-  showId: v.union(v.id("shows"), v.null()),
-  showTitle: v.union(v.string(), v.null()),
+  showId: v.id("shows"),
+  showTitle: v.union(v.string(), v.null()), // null only if the show vanished
   // Absent = the episode uses its show's cover.
   imageSource: v.optional(v.union(v.literal("ai"), v.literal("upload"))),
   imagePrompt: v.optional(v.string()),
@@ -191,7 +189,7 @@ export const getById = query({
     const podcastId = ctx.db.normalizeId("podcasts", args.podcastId);
     const p = podcastId && (await ctx.db.get("podcasts", podcastId));
     if (!p) return null;
-    const show = p.showId ? await ctx.db.get("shows", p.showId) : null;
+    const show = await ctx.db.get("shows", p.showId);
     const [imageUrl, audioUrl] = await Promise.all([
       coverUrl(ctx, p, show),
       ctx.storage.getUrl(p.audioStorageId),
@@ -209,7 +207,7 @@ export const getById = query({
       voiceName: voiceNameOf(p.voiceId),
       speakingRate: p.speakingRate ?? DEFAULT_SPEAKING_RATE,
       audioDurationSec: p.audioDurationSec,
-      showId: show?._id ?? null,
+      showId: p.showId,
       showTitle: show?.title ?? null,
       imageSource: p.imageSource,
       imagePrompt: p.imagePrompt,
@@ -372,11 +370,11 @@ async function getOwnPodcast(ctx: MutationCtx, podcastId: Id<"podcasts">) {
 /** Moves an episode's weight off its show (or onto it, with sign = 1). */
 async function shiftShowCounters(
   ctx: MutationCtx,
-  showId: Id<"shows"> | undefined,
+  showId: Id<"shows">,
   views: number,
   sign: 1 | -1,
 ) {
-  const show = showId && (await ctx.db.get("shows", showId));
+  const show = await ctx.db.get("shows", showId);
   if (!show) return;
   await ctx.db.patch("shows", show._id, {
     episodeCount: Math.max(show.episodeCount + sign, 0),
@@ -515,7 +513,7 @@ export const registerView = mutation({
     // ponytail: a third write per play, on the show doc that every play of
     // its episodes shares; watch `occRetried` in insights, and move the
     // counters to @convex-dev/sharded-counter if it shows up.
-    const show = podcast.showId && (await ctx.db.get("shows", podcast.showId));
+    const show = await ctx.db.get("shows", podcast.showId);
     if (show) {
       await ctx.db.patch("shows", show._id, {
         totalViews: show.totalViews + 1,

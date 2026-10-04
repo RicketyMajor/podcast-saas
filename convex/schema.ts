@@ -44,8 +44,7 @@ export default defineSchema({
     .searchIndex("search_text", { searchField: "searchText" }),
 
   podcasts: defineTable({
-    // Optional only until backfillShows runs in every deployment (ADR-029).
-    showId: v.optional(v.id("shows")),
+    showId: v.id("shows"), // every episode belongs to a show (ADR-029)
     authorId: v.id("users"),
     authorName: v.string(),
     authorImageUrl: v.string(),
