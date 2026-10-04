@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { api } from "@/convex/_generated/api";
-import { cn, formatCount } from "@/lib/utils";
+import { cn, formatCountOf } from "@/lib/utils";
 
 export type ShowCardData = FunctionReturnType<
   typeof api.shows.getPopular
@@ -67,8 +67,7 @@ export function ShowCard({
             />
           )}
           <span className="absolute top-2 left-2 rounded-full bg-background/65 px-2 py-0.5 text-xs font-medium tabular-nums backdrop-blur-md">
-            {formatCount(show.episodeCount)}{" "}
-            {show.episodeCount === 1 ? "episodio" : "episodios"}
+            {formatCountOf(show.episodeCount, "episodio", "episodios")}
           </span>
         </div>
       </div>

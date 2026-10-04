@@ -14,6 +14,10 @@ export function safeRedirectPath(path: string | string[] | undefined) {
 const countFormat = new Intl.NumberFormat("es", { useGrouping: "always" });
 export const formatCount = (n: number) => countFormat.format(n);
 
+/** (4, "episodio", "episodios") → "4 episodios" */
+export const formatCountOf = (n: number, one: string, many: string) =>
+  `${formatCount(n)} ${n === 1 ? one : many}`;
+
 /** 265.1 → "4:25" */
 export function formatDuration(seconds: number) {
   const total = Math.round(seconds);
