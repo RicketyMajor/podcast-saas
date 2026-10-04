@@ -146,6 +146,88 @@ export const search = query({
   },
 });
 
+const feedEpisode = v.object({
+  _id: v.id("podcasts"),
+  _creationTime: v.number(),
+  title: v.string(),
+  description: v.string(),
+  transcript: v.string(),
+  languageCode: v.string(),
+  audioDurationSec: v.number(),
+  audioUrl: v.string(),
+  audioSize: v.number(),
+  audioType: v.string(),
+  imageUrl: v.union(v.string(), v.null()),
+});
+
+// What a podcast app needs (RSS, phase 19): only data the show and detail
+// pages already make public. No episodes, no feed: like discovery.
+export const getFeed = query({
+  args: { showId: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id("shows"),
+      title: v.string(),
+      description: v.string(),
+      authorName: v.string(),
+      languageCode: v.string(),
+      category: v.string(),
+      explicit: v.boolean(),
+      imageUrl: v.union(v.string(), v.null()),
+      episodes: v.array(feedEpisode),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const showId = ctx.db.normalizeId("shows", args.showId);
+    const show = showId && (await ctx.db.get("shows", showId));
+    if (!show || show.episodeCount === 0) return null;
+    // ponytail: newest 100, like getByShow; page the feed past that.
+    const podcasts = await ctx.db
+      .query("podcasts")
+      .withIndex("by_show", (q) => q.eq("showId", show._id))
+      .order("desc")
+      .take(100);
+    const episodes = await Promise.all(
+      podcasts.map(async (p) => {
+        const [file, audioUrl, imageUrl] = await Promise.all([
+          ctx.db.system.get("_storage", p.audioStorageId),
+          ctx.storage.getUrl(p.audioStorageId),
+          p.imageStorageId ? ctx.storage.getUrl(p.imageStorageId) : null,
+        ]);
+        // An item without its audio breaks podcast apps: leave it out.
+        if (!file || !audioUrl) return null;
+        return {
+          _id: p._id,
+          _creationTime: p._creationTime,
+          title: p.title,
+          description: p.description,
+          transcript: p.transcript,
+          languageCode: p.languageCode,
+          audioDurationSec: p.audioDurationSec,
+          audioUrl,
+          audioSize: file.size,
+          audioType: file.contentType ?? "audio/mpeg", // all Waves audio is MP3
+          imageUrl,
+        };
+      }),
+    );
+    const listed = episodes.filter((episode) => episode !== null);
+    if (listed.length === 0) return null;
+    return {
+      _id: show._id,
+      title: show.title,
+      description: show.description,
+      authorName: show.authorName,
+      languageCode: show.languageCode,
+      category: show.category,
+      explicit: show.explicit,
+      imageUrl: await ctx.storage.getUrl(show.imageStorageId),
+      episodes: listed,
+    };
+  },
+});
+
 /** The show, if it exists and the current user is its author. */
 export async function getOwnShow(
   ctx: MutationCtx,
