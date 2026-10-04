@@ -2,8 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { ConvexError } from "convex/values";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -72,21 +74,38 @@ const LEGEND =
 const STAGE =
   "flex scroll-mt-40 flex-col gap-10 outline-none sm:scroll-mt-32 lg:scroll-mt-24";
 
+export type ShowOption = FunctionReturnType<
+  typeof api.shows.getByAuthor
+>[number];
+
 /** Without `podcast` it creates one; with it, it edits that podcast. */
 export function PodcastForm({
   defaultTitle = "",
+  defaultShowId,
+  shows,
   podcast,
 }: {
   defaultTitle?: string;
+  defaultShowId?: string;
+  /** The author's shows (at least one): an episode always belongs to one. */
+  shows: ShowOption[];
   podcast?: PodcastDetailData;
 }) {
   const router = useRouter();
   const createPodcast = useMutation(api.podcasts.create);
   const updatePodcast = useMutation(api.podcasts.update);
   const editing = podcast !== undefined;
+  const initialShow = shows.find(
+    (s) =>
+      s._id ===
+      (podcast?.showId ??
+        defaultShowId ??
+        (shows.length === 1 ? shows[0]?._id : undefined)),
+  );
   // Stored values passed validation on publish, so the casts hold.
   const defaults: PodcastFormValues = podcast
     ? {
+        showId: initialShow?._id ?? "",
         title: podcast.title,
         description: podcast.description,
         languageCode: podcast.languageCode as PodcastFormValues["languageCode"],
@@ -95,9 +114,11 @@ export function PodcastForm({
         script: podcast.transcript,
       }
     : {
+        showId: initialShow?._id ?? "",
         title: defaultTitle,
         description: "",
-        languageCode: "es-US",
+        languageCode: (initialShow?.languageCode ??
+          "es-US") as PodcastFormValues["languageCode"],
         voiceName: DEFAULT_VOICE_NAME,
         speakingRate: String(DEFAULT_SPEAKING_RATE),
         script: "",
@@ -123,8 +144,9 @@ export function PodcastForm({
         }
       : null,
   );
+  // null = the episode uses its show's cover (an inherited one has no source).
   const [image, setImage] = useState<Thumbnail | null>(() =>
-    podcast?.imageUrl
+    podcast?.imageUrl && podcast.imageSource
       ? {
           url: podcast.imageUrl,
           source: podcast.imageSource,
@@ -132,24 +154,33 @@ export function PodcastForm({
         }
       : null,
   );
-  const [title, description, script, languageCode, voiceName, speakingRate] =
-    useWatch({
-      control,
-      name: [
-        "title",
-        "description",
-        "script",
-        "languageCode",
-        "voiceName",
-        "speakingRate",
-      ],
-    });
+  const [
+    showId,
+    title,
+    description,
+    script,
+    languageCode,
+    voiceName,
+    speakingRate,
+  ] = useWatch({
+    control,
+    name: [
+      "showId",
+      "title",
+      "description",
+      "script",
+      "languageCode",
+      "voiceName",
+      "speakingRate",
+    ],
+  });
+  const show = shows.find((s) => s._id === showId);
   const audioReady =
     audio !== null &&
     sameSource(audio.source, { script, languageCode, voiceName, speakingRate });
-  const canPublish = isValid && audioReady && image !== null;
-  // The cover you make lights the room, like a playing one would.
-  usePageCover(image?.url);
+  const canPublish = isValid && audioReady;
+  // The cover you make (or the show's) lights the room, like a playing one would.
+  usePageCover(image?.url ?? show?.imageUrl);
 
   const { shape } = podcastFormSchema;
   const stages: Stage[] = [
@@ -157,6 +188,7 @@ export function PodcastForm({
       target: "stage-script",
       label: "Guion",
       status:
+        show !== undefined &&
         shape.title.safeParse(title).success &&
         shape.description.safeParse(description).success &&
         shape.script.safeParse(script).success
@@ -171,7 +203,8 @@ export function PodcastForm({
     {
       target: "stage-cover",
       label: "Portada",
-      status: image ? "done" : "todo",
+      // The show's cover counts: an episode doesn't need its own.
+      status: image || show ? "done" : "todo",
     },
     { target: "stage-publish", label: "Publicar", status: "todo" },
   ];
@@ -179,11 +212,9 @@ export function PodcastForm({
   const action = editing ? "guardar" : "publicar";
   const publishHelp = !audioReady
     ? `Genera el audio con el guion actual para ${action}.`
-    : image === null
-      ? `Agrega una portada para ${action}.`
-      : !isValid
-        ? "Revisa los campos marcados."
-        : null;
+    : !isValid
+      ? "Revisa los campos marcados."
+      : null;
 
   // New files carry a storageId; the published ones being edited don't.
   useLeaveWarning(
@@ -194,15 +225,16 @@ export function PodcastForm({
   );
 
   const onSubmit = handleSubmit(async (values) => {
-    if (!audio || !audioReady || !image) return;
+    if (!audio || !audioReady || !show) return;
     const fields = {
+      showId: show._id,
       title: values.title,
       description: values.description,
       transcript: values.script,
       languageCode: values.languageCode,
       voiceName: values.voiceName,
       speakingRate: Number(values.speakingRate),
-      imagePrompt: image.prompt,
+      imagePrompt: image?.prompt,
     };
     try {
       if (podcast) {
@@ -210,18 +242,21 @@ export function PodcastForm({
           ...fields,
           podcastId: podcast._id,
           audioStorageId: audio.storageId,
-          imageStorageId: image.storageId,
+          // undefined keeps the published cover; null drops an own one.
+          imageStorageId:
+            image?.storageId ??
+            (image === null && podcast.imageSource ? null : undefined),
         });
         toast.success("Cambios guardados.");
         router.push(`/podcasts/${podcast._id}`);
       } else {
-        if (!audio.storageId || !image.storageId) return;
+        if (!audio.storageId) return;
         const podcastId = await createPodcast({
           ...fields,
           audioStorageId: audio.storageId,
-          imageStorageId: image.storageId,
+          imageStorageId: image?.storageId,
         });
-        toast.success("¡Podcast publicado!");
+        toast.success("¡Episodio publicado!");
         router.push(`/podcasts/${podcastId}`);
       }
     } catch (err) {
@@ -246,6 +281,58 @@ export function PodcastForm({
         <FieldSet className={FIELDSET}>
           <FieldLegend className={LEGEND}>Detalles</FieldLegend>
           <FieldGroup>
+            <Controller
+              name="showId"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="showId">Show</FieldLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // A new episode starts in its show's language; an
+                      // edited one keeps the language its audio was voiced in.
+                      const picked = shows.find((s) => s._id === value);
+                      if (!editing && picked) {
+                        setValue(
+                          "languageCode",
+                          picked.languageCode as PodcastFormValues["languageCode"],
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      id="showId"
+                      onBlur={field.onBlur}
+                      aria-invalid={fieldState.invalid}
+                      aria-describedby="showId-help"
+                      className={SELECT_TRIGGER}
+                    >
+                      <SelectValue placeholder="Elige un show" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shows.map((option) => (
+                        <SelectItem key={option._id} value={option._id}>
+                          {option.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription id="showId-help">
+                    El episodio se publica dentro de este show.{" "}
+                    <Link
+                      href="/shows/new?next=create"
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      Crear un show nuevo
+                    </Link>
+                  </FieldDescription>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
             <Controller
               name="title"
               control={control}
@@ -447,6 +534,7 @@ export function PodcastForm({
             image={image}
             onImageChange={setImage}
             primary={current === 2}
+            fallbackUrl={show?.imageUrl}
           />
         </FieldSet>
       </section>
@@ -470,7 +558,7 @@ export function PodcastForm({
               : "Guardar cambios"
             : isSubmitting
               ? "Publicando…"
-              : "Publicar podcast"}
+              : "Publicar episodio"}
         </PillButton>
         {publishHelp && (
           <p id="publish-help" className="text-sm text-muted-foreground">

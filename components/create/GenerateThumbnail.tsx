@@ -2,7 +2,7 @@
 
 import { useAction, useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { ImageUp, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { ImageUp, Loader2, RefreshCw, Sparkles, Undo2 } from "lucide-react";
 import Image from "next/image";
 import { useState, type DragEvent } from "react";
 import { toast } from "sonner";
@@ -42,11 +42,14 @@ export function GenerateThumbnail({
   image,
   onImageChange,
   primary,
+  fallbackUrl,
 }: {
   image: Thumbnail | null;
-  onImageChange: (image: Thumbnail) => void;
+  onImageChange: (image: Thumbnail | null) => void;
   /** Ivory only while this is the rail's current stage. */
   primary: boolean;
+  /** The show's cover: what an episode uses while it has none of its own. */
+  fallbackUrl?: string | null;
 }) {
   const generateThumbnail = useAction(api.ai.actions.generateThumbnail);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
@@ -55,12 +58,13 @@ export function GenerateThumbnail({
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  const preview = image?.url ?? fallbackUrl;
   const promptLength = prompt.trim().length;
   const canGenerate =
     promptLength >= IMAGE_PROMPT_MIN_CHARS &&
     promptLength <= IMAGE_PROMPT_MAX_CHARS;
 
-  function replace(next: Thumbnail) {
+  function replace(next: Thumbnail | null) {
     if (image?.url.startsWith("blob:")) URL.revokeObjectURL(image.url);
     onImageChange(next);
   }
@@ -120,19 +124,39 @@ export function GenerateThumbnail({
 
   return (
     <div className="flex flex-col gap-5 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/8 sm:p-6">
-      {image && (
-        // ponytail: unoptimized, it's a one-off preview (and blob: URLs can't be optimized).
-        <Image
-          key={image.url}
-          src={image.url}
-          alt="Vista previa de la portada"
-          width={1024}
-          height={1024}
-          unoptimized
-          loading="eager"
-          // A new cover develops in from a blur, like a print.
-          className="aspect-square w-full max-w-64 rounded-2xl object-cover shadow-2xl ring-1 shadow-black/60 ring-foreground/10 motion-safe:animate-in motion-safe:duration-700 motion-safe:zoom-in-95 motion-safe:blur-in"
-        />
+      {preview && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-5">
+          {/* ponytail: unoptimized, it's a one-off preview (and blob: URLs can't be optimized). */}
+          <Image
+            key={preview}
+            src={preview}
+            alt="Vista previa de la portada"
+            width={1024}
+            height={1024}
+            unoptimized
+            loading="eager"
+            // A new cover develops in from a blur, like a print.
+            className="aspect-square w-full max-w-64 rounded-2xl object-cover shadow-2xl ring-1 shadow-black/60 ring-foreground/10 motion-safe:animate-in motion-safe:duration-700 motion-safe:zoom-in-95 motion-safe:blur-in"
+          />
+          {fallbackUrl &&
+            (image ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 self-start rounded-full px-5 sm:self-auto"
+                disabled={pending !== null}
+                onClick={() => replace(null)}
+              >
+                <Undo2 aria-hidden />
+                Usar la portada del show
+              </Button>
+            ) : (
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Usando la portada del show. Genera o sube otra si este episodio
+                necesita la suya.
+              </p>
+            ))}
+        </div>
       )}
 
       <Tabs defaultValue="ai" className="gap-4">

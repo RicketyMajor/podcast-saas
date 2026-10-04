@@ -22,6 +22,7 @@ export const text = (label: string, min: number, max: number) =>
     .max(max, `${label} no puede superar ${formatCount(max)} caracteres.`);
 
 export const podcastFormSchema = z.object({
+  showId: z.string().min(1, "Elige un show."),
   title: text("El título", TITLE_MIN_CHARS, TITLE_MAX_CHARS),
   description: text(
     "La descripción",

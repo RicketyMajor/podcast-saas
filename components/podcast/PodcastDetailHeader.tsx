@@ -140,6 +140,17 @@ export function PodcastDetailHeader({
             <h1 className="font-display text-[clamp(2rem,4.4vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] break-words">
               {podcast.title}
             </h1>
+            {podcast.showId && podcast.showTitle && (
+              <Link
+                href={`/shows/${podcast.showId}`}
+                className="-my-2 inline-flex min-h-11 w-fit max-w-full items-center gap-1.5 rounded-full text-lg text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                de
+                <span className="truncate font-semibold text-foreground">
+                  {podcast.showTitle}
+                </span>
+              </Link>
+            )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <Link
                 href={`/profile/${podcast.authorId}`}

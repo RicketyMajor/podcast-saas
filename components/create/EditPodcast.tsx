@@ -14,9 +14,17 @@ import { api } from "@/convex/_generated/api";
 export function EditPodcast({ podcastId }: { podcastId: string }) {
   const podcast = useQuery(api.podcasts.getById, { podcastId });
   const me = useQuery(api.users.current);
+  const shows = useQuery(
+    api.shows.getByAuthor,
+    me ? { authorId: me._id } : "skip",
+  );
 
   let content;
-  if (podcast === undefined || me === undefined) {
+  if (
+    podcast === undefined ||
+    me === undefined ||
+    (me !== null && shows === undefined)
+  ) {
     content = (
       <Loader2
         aria-label="Cargando podcast"
@@ -42,7 +50,7 @@ export function EditPodcast({ podcastId }: { podcastId: string }) {
       />
     );
   } else {
-    content = <PodcastForm podcast={podcast} />;
+    content = <PodcastForm podcast={podcast} shows={shows ?? []} />;
   }
 
   return (
