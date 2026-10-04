@@ -143,9 +143,9 @@ export function PodcastDetailHeader({
             {podcast.showId && podcast.showTitle && (
               <Link
                 href={`/shows/${podcast.showId}`}
-                className="-my-2 inline-flex min-h-11 w-fit max-w-full items-center gap-1.5 rounded-full text-lg text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="-my-2 inline-flex min-h-11 w-fit max-w-full items-center rounded-full text-lg whitespace-pre text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
               >
-                de
+                {"de "}
                 <span className="truncate font-semibold text-foreground">
                   {podcast.showTitle}
                 </span>
