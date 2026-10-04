@@ -11,6 +11,7 @@ import { LANGUAGES } from "./ai/voices";
 import { assertOwner, authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
 import { checkCover, markConsumed, promptOf } from "./lib/covers";
 import {
+  clampLimit,
   DESCRIPTION_MAX_CHARS,
   DESCRIPTION_MIN_CHARS,
   MAX_SHOWS_PER_USER,
@@ -18,7 +19,10 @@ import {
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
 } from "./lib/limits";
-import { searchTextOf } from "./lib/text";
+import { normalizeSearchText, searchTextOf } from "./lib/text";
+
+// The "Shows" section above the episode results.
+const SHOW_SEARCH_RESULTS = 6;
 import { invalid, text } from "./lib/validation";
 
 // What lists, cards and the create form's show picker need.
@@ -90,6 +94,50 @@ export const getByAuthor = query({
       .order("desc")
       .take(MAX_SHOWS_PER_USER);
     return await Promise.all(shows.map((show) => toCard(ctx, show)));
+  },
+});
+
+// An empty show has nothing to play: discovery lists skip it. Its totalViews
+// is 0 (moving or deleting episodes takes their views along), so empties sit
+// at the tail of by_views.
+// ponytail: reads 2× and filters, so a row can come up short when many shows
+// are empty; an index on a "listed" flag fixes it if that ever happens.
+export const getPopular = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(showCard),
+  handler: async (ctx, { limit }) => {
+    const take = clampLimit(limit, 8, 50);
+    const shows = await ctx.db
+      .query("shows")
+      .withIndex("by_views")
+      .order("desc")
+      .take(take * 2);
+    return await Promise.all(
+      shows
+        .filter((show) => show.episodeCount > 0)
+        .slice(0, take)
+        .map((show) => toCard(ctx, show)),
+    );
+  },
+});
+
+// searchText = normalized title + author. Same 2× read as getPopular.
+export const search = query({
+  args: { query: v.string() },
+  returns: v.array(showCard),
+  handler: async (ctx, args) => {
+    const query = normalizeSearchText(args.query.slice(0, 100));
+    if (query === "") return [];
+    const shows = await ctx.db
+      .query("shows")
+      .withSearchIndex("search_text", (q) => q.search("searchText", query))
+      .take(SHOW_SEARCH_RESULTS * 2);
+    return await Promise.all(
+      shows
+        .filter((show) => show.episodeCount > 0)
+        .slice(0, SHOW_SEARCH_RESULTS)
+        .map((show) => toCard(ctx, show)),
+    );
   },
 });
 
