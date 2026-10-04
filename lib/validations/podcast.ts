@@ -14,7 +14,7 @@ import {
 } from "@/convex/lib/limits";
 import { formatCount } from "@/lib/utils";
 
-const text = (label: string, min: number, max: number) =>
+export const text = (label: string, min: number, max: number) =>
   z
     .string()
     .trim()

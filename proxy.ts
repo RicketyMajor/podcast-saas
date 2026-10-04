@@ -7,6 +7,8 @@ import {
 const isProtectedRoute = createRouteMatcher([
   "/create-podcast(.*)",
   "/podcasts/(.*)/edit",
+  "/shows/new",
+  "/shows/(.*)/edit",
 ]);
 const isAuthPage = createRouteMatcher(["/sign-in", "/sign-up"]);
 
