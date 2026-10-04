@@ -4,6 +4,7 @@ import { cache } from "react";
 
 import { ShowDetail } from "@/components/show/ShowDetail";
 import { api } from "@/convex/_generated/api";
+import { feedPath } from "@/lib/feed/rss";
 
 // One Convex call per request, shared by the metadata and the page.
 const preloadShow = cache((showId: string) =>
@@ -31,6 +32,17 @@ export async function generateMetadata({
       description,
       images,
     },
+    // Feed autodiscovery, only when there is a feed (episodes).
+    alternates:
+      show.episodeCount > 0
+        ? {
+            types: {
+              "application/rss+xml": [
+                { url: feedPath(show._id), title: show.title },
+              ],
+            },
+          }
+        : undefined,
   };
 }
 

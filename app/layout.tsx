@@ -20,6 +20,12 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
+  // Absolute URLs for metadata (the show's RSS link): prod domain on Vercel.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000",
+  ),
   title: { default: "Waves", template: "%s · Waves" },
   description: "Crea, publica y escucha podcasts generados con IA.",
 };

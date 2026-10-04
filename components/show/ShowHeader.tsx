@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Radio,
+  Rss,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
@@ -34,6 +35,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
 import { SHOW_CATEGORIES } from "@/convex/lib/limits";
+import { feedPath } from "@/lib/feed/rss";
 import { formatCount } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 import { usePlayerStore } from "@/stores/player-store";
@@ -171,15 +173,18 @@ export function ShowHeader({
           </ul>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {!empty && (
-              <Button
-                size="lg"
-                className="h-12 rounded-full px-7 text-base shadow-lg shadow-black/30 transition-transform active:scale-95"
-                disabled={!latest?.audioUrl}
-                onClick={togglePlay}
-              >
-                <PlayPauseIcon playing={playing} className="size-5" />
-                {playing ? "Pausar" : "Reproducir"}
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  className="h-12 rounded-full px-7 text-base shadow-lg shadow-black/30 transition-transform active:scale-95"
+                  disabled={!latest?.audioUrl}
+                  onClick={togglePlay}
+                >
+                  <PlayPauseIcon playing={playing} className="size-5" />
+                  {playing ? "Pausar" : "Reproducir"}
+                </Button>
+                <CopyFeedButton showId={show._id} />
+              </>
             )}
             {isOwner && (
               <>
@@ -265,5 +270,24 @@ function AuthorActions({ show }: { show: ShowDetailData }) {
         onConfirm={handleDelete}
       />
     </>
+  );
+}
+
+// Glass: "Reproducir" stays the one ivory action.
+function CopyFeedButton({ showId }: { showId: string }) {
+  async function copy() {
+    const url = `${window.location.origin}${feedPath(showId)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Enlace del feed copiado. Pégalo en tu app de podcasts.");
+    } catch {
+      toast.error(`No pudimos copiarlo. Este es el enlace: ${url}`);
+    }
+  }
+  return (
+    <PillButton tone="glass" onClick={copy}>
+      <Rss aria-hidden />
+      Copiar enlace RSS
+    </PillButton>
   );
 }
