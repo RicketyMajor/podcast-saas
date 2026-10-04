@@ -1,13 +1,15 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Home, Mic, Radio, UserX } from "lucide-react";
+import { Home, ListMusic, Mic, Plus, Radio, UserX } from "lucide-react";
 import Link from "next/link";
 
 import { PodcastGrid } from "@/components/podcast/PodcastGrid";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PillButton } from "@/components/shared/PillButton";
+import { Shelf } from "@/components/shared/Shelf";
+import { ShowCard } from "@/components/show/ShowCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 
@@ -19,46 +21,78 @@ export function ProfileView({ profileId }: { profileId: string }) {
     api.podcasts.getByAuthor,
     profile ? { authorId: profile._id } : "skip",
   );
+  const shows = useQuery(
+    api.shows.getByAuthor,
+    profile ? { authorId: profile._id } : "skip",
+  );
   const me = useQuery(api.users.current);
 
   if (profile === undefined) return <ProfileSkeleton />;
   if (profile === null) return <ProfileNotFound />;
 
   const isOwner = me?._id === profile._id;
+  // Visitors only see shows with something to play; the owner sees all of
+  // theirs (it's their "my shows" list).
+  const listed = shows?.filter((show) => isOwner || show.episodeCount > 0);
 
   return (
     <div className="flex flex-col gap-10">
       <ProfileHeader profile={profile} podcasts={podcasts} isOwner={isOwner} />
-      <section className="flex flex-col gap-5">
-        <SectionHeader title={`Podcasts de ${profile.name}`} />
-        {podcasts?.length === 0 ? (
-          isOwner ? (
-            <EmptyState
-              icon={Mic}
-              title="Todavía no has creado podcasts"
-              description="Escribe un guion, elige una voz y la IA hace el resto."
-              action={
-                <PillButton asChild>
-                  <Link href="/create-podcast">
-                    <Mic aria-hidden />
-                    Crear mi primer podcast
-                  </Link>
-                </PillButton>
-              }
+      {isOwner && shows?.length === 0 ? (
+        // No show yet means no episode either: one step, one action.
+        <EmptyState
+          icon={ListMusic}
+          title="Todavía no tienes shows"
+          description="Un show agrupa tus episodios con su portada y su categoría. Crea el tuyo y publica el primero."
+          action={
+            <PillButton asChild>
+              <Link href="/shows/new">
+                <Plus aria-hidden />
+                Crear mi primer show
+              </Link>
+            </PillButton>
+          }
+        />
+      ) : !isOwner && profile.podcastCount === 0 ? (
+        // Without episodes, every show of theirs is empty: nothing to list.
+        <EmptyState
+          icon={Radio}
+          title={`${profile.name} aún no ha publicado podcasts`}
+        />
+      ) : (
+        <>
+          {listed?.length !== 0 && (
+            <Shelf
+              title={`Shows de ${profile.name}`}
+              items={listed}
+              renderItem={(show) => <ShowCard show={show} />}
             />
-          ) : (
-            <EmptyState
-              icon={Radio}
-              title={`${profile.name} aún no ha publicado podcasts`}
-            />
-          )
-        ) : (
-          <PodcastGrid
-            podcasts={podcasts}
-            skeletons={Math.min(profile.podcastCount, 8) || 4}
-          />
-        )}
-      </section>
+          )}
+          <section className="flex flex-col gap-5">
+            <SectionHeader title="Episodios recientes" />
+            {podcasts?.length === 0 ? (
+              <EmptyState
+                icon={Mic}
+                title="Todavía no has publicado episodios"
+                description="Escribe un guion, elige una voz y la IA hace el resto."
+                action={
+                  <PillButton asChild>
+                    <Link href="/create-podcast">
+                      <Mic aria-hidden />
+                      Crear mi primer episodio
+                    </Link>
+                  </PillButton>
+                }
+              />
+            ) : (
+              <PodcastGrid
+                podcasts={podcasts}
+                skeletons={Math.min(profile.podcastCount, 8) || 4}
+              />
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
