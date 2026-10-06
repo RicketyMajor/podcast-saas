@@ -95,7 +95,11 @@ export function geminiText(apiKey: string): TextProvider {
   return {
     id: "gemini",
     async generateScript({ topic, languageLabel, targetMinutes, tone, hosts }) {
-      const words = targetMinutes * WORDS_PER_MINUTE;
+      // A dialogue's "Name: " labels and blank lines take ~10% of the
+      // 5,000-char budget: ask for fewer words so the goodbye isn't cut.
+      const words = Math.round(
+        targetMinutes * WORDS_PER_MINUTE * (hosts ? 0.9 : 1),
+      );
       const prompt = [
         `Idioma del guion: ${languageLabel}.`,
         `Duración: ${targetMinutes} min (unas ${words} palabras${hosts ? " en total" : ""}).`,
@@ -170,7 +174,10 @@ export function geminiText(apiKey: string): TextProvider {
           };
           script = dialogueScript(turns, hosts);
         } catch {
-          console.error("Gemini dialogue: not the requested JSON");
+          // MAX_TOKENS here means the JSON was cut off mid-way.
+          console.error(
+            `Gemini dialogue: not the requested JSON (finish: ${candidate?.finishReason})`,
+          );
           throw aiFailed();
         }
       }

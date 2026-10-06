@@ -14,6 +14,9 @@ export const GOOGLE_TTS = {
   chunkBytes: 1_500,
   // Requests in flight at once: Chirp 3 HD allows 200/min, and a two-voice
   // conversation can have ~60 turns (phase 21).
+  // ponytail: the 200/min is per project, and a 60-turn conversation sends
+  // ~65 requests, so 3+ at the same moment can hit 429 and fail after the
+  // retries; queue audio generations (@convex-dev/workpool) if that shows up.
   maxConcurrent: 6,
   sampleRate: 24_000,
   // List price after the 1M chars/month free tier (verified 2026-09-29).
