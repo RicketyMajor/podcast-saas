@@ -16,7 +16,7 @@ import {
   SCRIPT_TOPIC_MIN_CHARS,
   SPEAKING_RATES,
 } from "../lib/limits";
-import type { Turn } from "../lib/dialogue";
+import { hostNamesError, parseDialogue, type Turn } from "../lib/dialogue";
 import { tidyScript } from "../lib/text";
 import { checkDialogue, hostInput } from "../lib/validation";
 import { chunkScript, concatPcm, encodeMp3, mapLimit } from "./audio";
@@ -209,6 +209,8 @@ export const generateScript = action({
     languageCode: v.string(),
     minutes: v.number(),
     tone: v.string(),
+    // Two host names = a conversation (phase 21).
+    hosts: v.optional(v.array(v.string())),
   },
   returns: v.object({ script: v.string() }),
   handler: async (ctx, args) => {
@@ -231,6 +233,13 @@ export const generateScript = action({
     if (!(SCRIPT_TONES as readonly string[]).includes(args.tone)) {
       throw invalid("Tono no disponible.");
     }
+    let hosts: [string, string] | undefined;
+    if (args.hosts !== undefined) {
+      const error = hostNamesError(args.hosts);
+      if (error) throw invalid(error);
+      const [a = "", b = ""] = args.hosts;
+      hosts = [a.trim(), b.trim()];
+    }
 
     const apiKey = requireEnv("GEMINI_API_KEY", "guiones");
 
@@ -252,9 +261,14 @@ export const generateScript = action({
         languageLabel: language.label,
         targetMinutes: args.minutes,
         tone: args.tone,
+        hosts,
       });
       const script = tidyScript(result.script, SCRIPT_MAX_CHARS);
       if (script.length < SCRIPT_MIN_CHARS) throw new Error("Script too short");
+      // tidyScript may cut whole turns off the end: the rest must still parse.
+      if (hosts && !parseDialogue(script, hosts).ok) {
+        throw new Error("Dialogue doesn't parse");
+      }
 
       await ctx.runMutation(internal.ai.generations.finishGeneration, {
         generationId,
@@ -266,7 +280,7 @@ export const generateScript = action({
         },
       });
       console.log(
-        `script ok: ${result.inputTokens} in / ${result.outputTokens} out tokens, ${script.length} chars`,
+        `script ok${hosts ? " (dialogue)" : ""}: ${result.inputTokens} in / ${result.outputTokens} out tokens, ${script.length} chars`,
       );
       return { script };
     } catch (error) {

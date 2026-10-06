@@ -20,6 +20,8 @@ export interface TextProvider {
     languageLabel: string; // e.g. "Español (Latinoamérica)"
     targetMinutes: number;
     tone: string;
+    /** Two names = a conversation: the script comes back as "Name: text". */
+    hosts?: readonly [string, string];
   }): Promise<{ script: string; inputTokens: number; outputTokens: number }>;
 }
 
