@@ -515,10 +515,21 @@ export function PodcastForm({
                     <FieldLabel key={value} htmlFor={`format-${value}`}>
                       <Field orientation="horizontal">
                         <FieldContent>
-                          <FieldTitle>{title}</FieldTitle>
-                          <FieldDescription>{help}</FieldDescription>
+                          <FieldTitle id={`format-${value}-title`}>
+                            {title}
+                          </FieldTitle>
+                          <FieldDescription id={`format-${value}-help`}>
+                            {help}
+                          </FieldDescription>
                         </FieldContent>
-                        <RadioGroupItem value={value} id={`format-${value}`} />
+                        {/* A radio is a <button>: name it explicitly, a
+                            wrapping <label> doesn't count for every reader. */}
+                        <RadioGroupItem
+                          value={value}
+                          id={`format-${value}`}
+                          aria-labelledby={`format-${value}-title`}
+                          aria-describedby={`format-${value}-help`}
+                        />
                       </Field>
                     </FieldLabel>
                   ))}
