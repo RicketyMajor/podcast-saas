@@ -75,3 +75,8 @@ export const SHOW_CATEGORIES = [
   { value: "TV & Film", label: "Cine y televisión" },
 ] as const;
 export const DEFAULT_SHOW_CATEGORY = "Society & Culture";
+
+// "Email para directorios" (phase 20): a sanity check, not RFC 5322; Spotify
+// proves the address works by mailing it a code.
+export const EMAIL_MAX_CHARS = 254;
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

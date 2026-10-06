@@ -8,7 +8,12 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { LANGUAGES } from "./ai/voices";
-import { assertOwner, authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
+import {
+  assertOwner,
+  authorNameOf,
+  getCurrentUser,
+  getCurrentUserOrThrow,
+} from "./lib/auth";
 import { checkCover, markConsumed, promptOf } from "./lib/covers";
 import {
   clampLimit,
@@ -20,7 +25,7 @@ import {
   TITLE_MIN_CHARS,
 } from "./lib/limits";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
-import { invalid, text } from "./lib/validation";
+import { invalid, optionalEmail, text } from "./lib/validation";
 
 // The "Shows" section above the episode results.
 const SHOW_SEARCH_RESULTS = 6;
@@ -79,6 +84,37 @@ export const getById = query({
       totalViews: show.totalViews,
       imageSource: show.imageSource,
       imagePrompt: show.imagePrompt,
+    };
+  },
+});
+
+// The "Publica en Apple Podcasts y Spotify" panel and the edit form: only
+// the author sees the email (the feed shows it on purpose).
+export const getDirectoryStatus = query({
+  args: { showId: v.string() },
+  returns: v.union(
+    v.object({
+      email: v.union(v.string(), v.null()),
+      episodeCount: v.number(),
+      withoutDisclosure: v.number(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const showId = ctx.db.normalizeId("shows", args.showId);
+    const show = showId && (await ctx.db.get("shows", showId));
+    if (!user || !show || show.authorId !== user._id) return null;
+    // ponytail: newest 100, the same episodes the feed lists.
+    const episodes = await ctx.db
+      .query("podcasts")
+      .withIndex("by_show", (q) => q.eq("showId", show._id))
+      .order("desc")
+      .take(100);
+    return {
+      email: show.directoryEmail ?? null,
+      episodeCount: show.episodeCount,
+      withoutDisclosure: episodes.filter((p) => !p.spokenDisclosure).length,
     };
   },
 });
@@ -253,6 +289,7 @@ const showFields = {
   category: v.string(),
   explicit: v.boolean(),
   imagePrompt: v.optional(v.string()),
+  directoryEmail: v.optional(v.string()),
 };
 
 function checkFields(args: {
@@ -291,6 +328,7 @@ export const create = mutation({
       throw invalid(`Puedes tener hasta ${MAX_SHOWS_PER_USER} shows.`);
     }
     const fields = checkFields(args);
+    const directoryEmail = optionalEmail(args.directoryEmail);
     const cover = await checkCover(ctx, user._id, args.imageStorageId);
 
     const authorName = authorNameOf(user);
@@ -301,6 +339,7 @@ export const create = mutation({
       languageCode: args.languageCode,
       category: args.category,
       explicit: args.explicit,
+      ...(directoryEmail && { directoryEmail }),
       imageStorageId: args.imageStorageId,
       imageSource: cover.imageSource,
       imagePrompt: promptOf(cover.imageSource, args.imagePrompt),
@@ -337,6 +376,11 @@ export const update = mutation({
       languageCode: args.languageCode,
       category: args.category,
       explicit: args.explicit,
+      // Absent = keep (an older client); "" = remove.
+      directoryEmail:
+        args.directoryEmail === undefined
+          ? show.directoryEmail
+          : optionalEmail(args.directoryEmail),
       searchText: searchTextOf(fields.title, show.authorName),
       ...(newCover
         ? {
