@@ -20,6 +20,7 @@ export async function GET(
       podcast.transcript,
       podcast.languageCode,
       podcast.spokenDisclosure,
+      podcast.hosts?.[0]?.name,
     ).replace(/\r\n?/g, "\n"),
     "text/plain; charset=utf-8",
   );

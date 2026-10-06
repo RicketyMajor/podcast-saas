@@ -2,12 +2,15 @@ import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "@/convex/_generated/api";
 import { disclosureOf } from "@/convex/ai/voices";
+import { parseDialogue } from "@/convex/lib/dialogue";
 
+import type { Segment } from "./vtt";
 import { cdata, escapeXml as e } from "./xml";
 
 export type Feed = NonNullable<FunctionReturnType<typeof api.shows.getFeed>>;
 
-export const AI_NOTE = "Voz generada con IA en Waves.";
+// Plural: Waves voices one or two hosts (phase 21).
+export const AI_NOTE = "Voces generadas con IA en Waves.";
 
 export const feedPath = (showId: string) => `/shows/${showId}/feed.xml`;
 export const transcriptPath = (podcastId: string, ext: "txt" | "vtt") =>
@@ -37,9 +40,35 @@ export function voicedText(
   transcript: string,
   languageCode: string,
   spokenDisclosure: boolean,
+  speaker?: string, // a conversation's first host, who voices the notice
 ) {
   const notice = spokenDisclosure ? disclosureOf(languageCode) : "";
-  return notice ? `${notice}\n\n${transcript}` : transcript;
+  if (!notice) return transcript;
+  return `${speaker ? `${speaker}: ` : ""}${notice}\n\n${transcript}`;
+}
+
+type Voiced = {
+  transcript: string;
+  languageCode: string;
+  spokenDisclosure: boolean;
+  hosts: { name: string }[] | null;
+};
+
+/** Who says what, in order: one segment in narration, one per turn otherwise. */
+export function voicedSegments(ep: Voiced): Segment[] {
+  const narration = () => [
+    { text: voicedText(ep.transcript, ep.languageCode, ep.spokenDisclosure) },
+  ];
+  const [first, second] = ep.hosts ?? [];
+  if (!first || !second) return narration();
+  const names = [first.name, second.name] as const;
+  const dialogue = parseDialogue(ep.transcript, names);
+  if (!dialogue.ok) return narration(); // stored scripts parsed on publish
+  const notice = ep.spokenDisclosure ? disclosureOf(ep.languageCode) : "";
+  return [
+    ...(notice ? [{ speaker: names[0], text: notice }] : []),
+    ...dialogue.turns.map((t) => ({ speaker: names[t.speaker], text: t.text })),
+  ];
 }
 
 // Paragraphs split like TranscriptView: blank lines.
@@ -49,6 +78,16 @@ const html = (text: string) =>
     .map((p) => p.trim())
     .filter(Boolean)
     .map((p) => `<p>${e(p)}</p>`)
+    .join("");
+
+// A conversation names each speaker; narration keeps its paragraphs.
+const transcriptHtml = (segments: Segment[]) =>
+  segments
+    .map((s) =>
+      s.speaker
+        ? `<p><strong>${e(s.speaker)}:</strong> ${e(s.text)}</p>`
+        : html(s.text),
+    )
     .join("");
 
 const date = (ms: number) => new Date(ms).toUTCString();
@@ -76,7 +115,7 @@ export function buildFeed(feed: Feed, origin: string): string {
       `<link>${e(`${origin}/podcasts/${ep._id}`)}</link>`,
       `<pubDate>${date(ep._creationTime)}</pubDate>`,
       `<description>${e(`${ep.description}\n\n${AI_NOTE}`)}</description>`,
-      `<content:encoded>${cdata(`${html(ep.description)}<p>${AI_NOTE}</p><h3>Transcripción</h3>${html(voicedText(ep.transcript, ep.languageCode, ep.spokenDisclosure))}`)}</content:encoded>`,
+      `<content:encoded>${cdata(`${html(ep.description)}<p>${AI_NOTE}</p><h3>Transcripción</h3>${transcriptHtml(voicedSegments(ep))}`)}</content:encoded>`,
       `<enclosure url="${e(origin + audioPath(ep._id, ep.audioStorageId))}" length="${ep.audioSize}" type="${e(ep.audioType)}" />`,
       `<itunes:duration>${Math.round(ep.audioDurationSec)}</itunes:duration>`,
       ep.imageStorageId

@@ -2,7 +2,7 @@ import { fetchQuery } from "convex/nextjs";
 
 import { api } from "@/convex/_generated/api";
 import { cached, notFound, unavailable } from "@/lib/feed/http";
-import { voicedText } from "@/lib/feed/rss";
+import { voicedSegments } from "@/lib/feed/rss";
 import { estimateCues, toVtt } from "@/lib/feed/vtt";
 
 // Captions with estimated timings (RSS podcast:transcript, text/vtt).
@@ -17,16 +17,7 @@ export async function GET(
   if (podcast === undefined) return unavailable();
   if (podcast === null) return notFound("Transcripción no encontrada");
   return cached(
-    toVtt(
-      estimateCues(
-        voicedText(
-          podcast.transcript,
-          podcast.languageCode,
-          podcast.spokenDisclosure,
-        ),
-        podcast.audioDurationSec,
-      ),
-    ),
+    toVtt(estimateCues(voicedSegments(podcast), podcast.audioDurationSec)),
     "text/vtt; charset=utf-8",
   );
 }

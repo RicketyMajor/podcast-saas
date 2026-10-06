@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { Id } from "../convex/_generated/dataModel";
-import { buildFeed, versionOf, voicedText, type Feed } from "../lib/feed/rss";
+import {
+  buildFeed,
+  versionOf,
+  voicedSegments,
+  voicedText,
+  type Feed,
+} from "../lib/feed/rss";
 import { cdata, escapeXml } from "../lib/feed/xml";
 
 const episode = (
@@ -68,7 +74,7 @@ describe("buildFeed", () => {
     expect(xml).toContain("<link>https://waves.test/shows/show1</link>");
     expect(xml).toContain("<itunes:explicit>false</itunes:explicit>");
     expect(xml).toContain(
-      "Un show.\n\nVoz generada con IA en Waves.</description>",
+      "Un show.\n\nVoces generadas con IA en Waves.</description>",
     );
   });
   it("lists episodes newest first with stable guids and real enclosures", () => {
@@ -149,5 +155,40 @@ describe("versionOf", () => {
   it("rejects the wrong extension", () => {
     expect(versionOf("kg2abc.png", ".jpg")).toBeNull();
     expect(versionOf("kg2abc", ".mp3")).toBeNull();
+  });
+});
+
+describe("conversations", () => {
+  const talk = episode("ep3", Date.UTC(2026, 9, 6), {
+    transcript: "Martín: Hola, Lucía.\nLucía: Hola, Martín.",
+    spokenDisclosure: true,
+    hosts: [
+      { name: "Martín", voiceName: "Charon" },
+      { name: "Lucía", voiceName: "Aoede" },
+    ],
+  });
+  it("names each speaker in the show notes, the notice in voice 1", () => {
+    const owned = buildFeed(
+      { ...feed, episodes: [talk] },
+      "https://waves.test",
+    );
+    expect(owned).toContain(
+      "<h3>Transcripción</h3><p><strong>Martín:</strong> Este episodio fue creado con voces generadas por inteligencia artificial.</p><p><strong>Martín:</strong> Hola, Lucía.</p><p><strong>Lucía:</strong> Hola, Martín.</p>",
+    );
+  });
+  it("splits a conversation into turns and narration into one segment", () => {
+    expect(voicedSegments(talk).map((s) => s.speaker)).toEqual([
+      "Martín",
+      "Martín",
+      "Lucía",
+    ]);
+    expect(voicedSegments(episode("ep1", 0))).toEqual([
+      { text: "Hola.\n\nAdiós." },
+    ]);
+  });
+  it("attributes the plain-text notice to voice 1", () => {
+    expect(voicedText("Martín: Hola.", "en-US", true, "Martín")).toBe(
+      "Martín: This episode was created with AI-generated voices.\n\nMartín: Hola.",
+    );
   });
 });

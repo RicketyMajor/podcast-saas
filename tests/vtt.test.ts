@@ -5,7 +5,7 @@ import { estimateCues, toVtt } from "../lib/feed/vtt";
 const LONG =
   "Según la leyenda, un pastor llamado Kaldi notó que sus cabras saltaban con una energía extraña después de comer unas bayas rojas que crecían junto al camino del monasterio";
 const SCRIPT = `¿Sabías que el café nació en Etiopía? ¡Así es! ${LONG}.\n\nEn el siglo XV llegó a Yemen. Ok.`;
-const cues = estimateCues(SCRIPT, 42);
+const cues = estimateCues([{ text: SCRIPT }], 42);
 
 describe("estimateCues", () => {
   it("covers the whole audio with contiguous cues", () => {
@@ -46,5 +46,27 @@ describe("toVtt", () => {
     expect(vtt).toContain(
       "1\n00:00:00.000 --> 01:02:05.500\na &lt;b&gt; &amp; c --&gt; d\n",
     );
+  });
+});
+
+describe("estimateCues with speakers", () => {
+  const talk = estimateCues(
+    [
+      { speaker: "Martín", text: "Hola, Lucía. ¿Cómo estás hoy?" },
+      { speaker: "Lucía", text: "Sí." },
+      { speaker: "Martín", text: "Qué bueno, empecemos con el café." },
+    ],
+    10,
+  );
+  it("tags every cue with its speaker and never merges across turns", () => {
+    expect(talk.map((c) => c.speaker)).toEqual(["Martín", "Lucía", "Martín"]);
+    expect(talk[1]?.text).toBe("Sí.");
+  });
+  it("still covers the whole audio", () => {
+    expect(talk[0]?.start).toBe(0);
+    expect(talk.at(-1)?.end).toBe(10);
+  });
+  it("writes WebVTT voice spans", () => {
+    expect(toVtt(talk)).toContain("\n<v Lucía>Sí.\n");
   });
 });

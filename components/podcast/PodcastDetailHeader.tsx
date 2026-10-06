@@ -168,7 +168,7 @@ export function PodcastDetailHeader({
                   {podcast.authorName}
                 </span>
               </Link>
-              <AiBadge />
+              <AiBadge plural={podcast.hosts !== null} />
             </div>
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-foreground/80">
               <li className="flex items-center gap-1.5">

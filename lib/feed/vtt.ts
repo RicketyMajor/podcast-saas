@@ -1,11 +1,21 @@
-export type Cue = { start: number; end: number; text: string };
+export type Cue = {
+  start: number;
+  end: number;
+  text: string;
+  speaker?: string;
+};
+/** Text said by one voice; speaker only in a conversation. */
+export type Segment = { speaker?: string; text: string };
 
 const MAX_CUE_CHARS = 120;
 const MIN_CUE_CHARS = 15;
 // ponytail: estimated, not measured. A sentence end costs about this many
 // characters of speaking time (~0.5 s at ~15 chars/s); calibrate by ear.
-// The TTS's 250 ms gaps between synthesized parts aren't modeled (< 1 s).
+// The TTS's 250 ms gaps between parts of one turn aren't modeled (< 1 s).
 export const PAUSE_CHARS = 8;
+// Between turns the 250 ms gap between synthesized parts (~4 characters of
+// speech) sits on the previous cue, which stays on screen through it.
+export const TURN_GAP_CHARS = 4;
 
 const NOTE =
   "NOTE Tiempos estimados a partir de la duración del audio; no son marcas del TTS.";
@@ -55,20 +65,29 @@ function fit(sentence: string): string[] {
 }
 
 /** Spreads the real duration over the text, weighted by length. */
-export function estimateCues(transcript: string, durationSec: number): Cue[] {
-  const pieces = mergeShort(sentences(transcript)).flatMap((sentence) => {
-    const parts = fit(sentence);
-    return parts.map((text, i) => ({
-      text,
-      weight: text.length + (i === parts.length - 1 ? PAUSE_CHARS : 0),
-    }));
+export function estimateCues(segments: Segment[], durationSec: number): Cue[] {
+  // Per segment, so a cue never mixes two speakers.
+  const pieces = segments.flatMap(({ speaker, text }, s) => {
+    const lines = mergeShort(sentences(text)).flatMap((sentence) => {
+      const parts = fit(sentence);
+      return parts.map((part, i) => ({
+        speaker,
+        text: part,
+        weight: part.length + (i === parts.length - 1 ? PAUSE_CHARS : 0),
+      }));
+    });
+    const last = lines.at(-1);
+    if (last && speaker && s < segments.length - 1) {
+      last.weight += TURN_GAP_CHARS;
+    }
+    return lines;
   });
   const total = pieces.reduce((sum, p) => sum + p.weight, 0);
   let done = 0;
-  return pieces.map(({ text, weight }) => {
+  return pieces.map(({ speaker, text, weight }) => {
     const start = (done / total) * durationSec;
     done += weight;
-    return { start, end: (done / total) * durationSec, text };
+    return { start, end: (done / total) * durationSec, text, speaker };
   });
 }
 
@@ -84,7 +103,8 @@ const cueText = (text: string) =>
 export function toVtt(cues: Cue[]): string {
   const blocks = cues.map(
     (c, i) =>
-      `${i + 1}\n${stamp(c.start)} --> ${stamp(c.end)}\n${cueText(c.text)}`,
+      // <v Name>: WebVTT's voice span says who speaks.
+      `${i + 1}\n${stamp(c.start)} --> ${stamp(c.end)}\n${c.speaker ? `<v ${cueText(c.speaker)}>` : ""}${cueText(c.text)}`,
   );
   return `${["WEBVTT", NOTE, ...blocks].join("\n\n")}\n`;
 }

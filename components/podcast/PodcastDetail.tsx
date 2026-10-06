@@ -34,7 +34,7 @@ export function PodcastDetail({
       <p className="max-w-prose text-lg text-pretty text-foreground/80">
         {podcast.description}
       </p>
-      <TranscriptView transcript={podcast.transcript} />
+      <TranscriptView transcript={podcast.transcript} hosts={podcast.hosts} />
       {podcast.imageSource === "ai" && podcast.imagePrompt && (
         <details className="group max-w-prose text-sm text-muted-foreground">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm font-medium hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">

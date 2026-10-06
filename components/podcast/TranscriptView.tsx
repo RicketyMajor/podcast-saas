@@ -5,12 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { parseDialogue } from "@/convex/lib/dialogue";
 import { cn } from "@/lib/utils";
 
 // ~12 lines at leading-7 (1.75rem each).
 const COLLAPSED = "max-h-84";
 
-export function TranscriptView({ transcript }: { transcript: string }) {
+export function TranscriptView({
+  transcript,
+  hosts,
+}: {
+  transcript: string;
+  /** A conversation's two hosts; null = one-voice narration. */
+  hosts: { name: string }[] | null;
+}) {
   const textRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
@@ -20,6 +28,10 @@ export function TranscriptView({ transcript }: { transcript: string }) {
     const el = textRef.current;
     if (el && !expanded) setOverflows(el.scrollHeight > el.clientHeight + 1);
   }, [transcript, expanded]);
+
+  const [first, second] = hosts ?? [];
+  const names = first && second ? ([first.name, second.name] as const) : null;
+  const dialogue = names ? parseDialogue(transcript, names) : null;
 
   async function copy() {
     try {
@@ -58,11 +70,20 @@ export function TranscriptView({ transcript }: { transcript: string }) {
           !expanded && overflows && "mask-b-from-60% mask-b-to-100%",
         )}
       >
-        {transcript.split(/\n\s*\n/).map((paragraph, i) => (
-          <p key={i} className="whitespace-pre-line">
-            {paragraph}
-          </p>
-        ))}
+        {names && dialogue?.ok
+          ? dialogue.turns.map((turn, i) => (
+              <p key={i} className="whitespace-pre-line">
+                <strong className="font-semibold text-foreground">
+                  {names[turn.speaker]}:
+                </strong>{" "}
+                {turn.text}
+              </p>
+            ))
+          : transcript.split(/\n\s*\n/).map((paragraph, i) => (
+              <p key={i} className="whitespace-pre-line">
+                {paragraph}
+              </p>
+            ))}
       </div>
       {(overflows || expanded) && (
         <Button
