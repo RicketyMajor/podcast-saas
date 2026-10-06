@@ -170,6 +170,7 @@ const podcastDetail = v.object({
   languageCode: v.string(),
   voiceName: v.string(),
   speakingRate: v.number(),
+  spokenDisclosure: v.boolean(), // its audio opens with the AI notice
   audioDurationSec: v.number(),
   showId: v.id("shows"),
   showTitle: v.union(v.string(), v.null()), // null only if the show vanished
@@ -206,6 +207,7 @@ export const getById = query({
       languageCode: p.languageCode,
       voiceName: voiceNameOf(p.voiceId),
       speakingRate: p.speakingRate ?? DEFAULT_SPEAKING_RATE,
+      spokenDisclosure: p.spokenDisclosure === true,
       audioDurationSec: p.audioDurationSec,
       showId: p.showId,
       showTitle: show?.title ?? null,
@@ -299,7 +301,12 @@ async function checkAudio(
   if (!usable(audio, userId, "audio") || audio.outputSeconds === undefined) {
     throw invalid("El audio no es válido. Vuelve a generarlo.");
   }
-  return { generation: audio, durationSec: audio.outputSeconds };
+  return {
+    generation: audio,
+    durationSec: audio.outputSeconds,
+    // The generation is the record of what was voiced, not the client.
+    spokenDisclosure: audio.spokenDisclosure === true,
+  };
 }
 
 export const create = mutation({
@@ -333,6 +340,7 @@ export const create = mutation({
       speakingRate: args.speakingRate,
       audioStorageId: args.audioStorageId,
       audioDurationSec: audio.durationSec,
+      spokenDisclosure: audio.spokenDisclosure,
       ...(cover && {
         imageStorageId: args.imageStorageId,
         imageSource: cover.imageSource,
@@ -435,6 +443,7 @@ export const update = mutation({
       ...(newAudio && {
         audioStorageId: args.audioStorageId,
         audioDurationSec: newAudio.durationSec,
+        spokenDisclosure: newAudio.spokenDisclosure,
       }),
       ...(newCover
         ? {
