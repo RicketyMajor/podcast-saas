@@ -2,7 +2,7 @@ import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "@/convex/_generated/api";
 import { disclosureOf } from "@/convex/ai/voices";
-import { parseDialogue } from "@/convex/lib/dialogue";
+import { dialogueOf } from "@/convex/lib/dialogue";
 
 import type { Segment } from "./vtt";
 import { cdata, escapeXml as e } from "./xml";
@@ -56,18 +56,17 @@ type Voiced = {
 
 /** Who says what, in order: one segment in narration, one per turn otherwise. */
 export function voicedSegments(ep: Voiced): Segment[] {
-  const narration = () => [
-    { text: voicedText(ep.transcript, ep.languageCode, ep.spokenDisclosure) },
-  ];
-  const [first, second] = ep.hosts ?? [];
-  if (!first || !second) return narration();
-  const names = [first.name, second.name] as const;
-  const dialogue = parseDialogue(ep.transcript, names);
-  if (!dialogue.ok) return narration(); // stored scripts parsed on publish
+  const dialogue = dialogueOf(ep.transcript, ep.hosts);
+  if (!dialogue) {
+    return [
+      { text: voicedText(ep.transcript, ep.languageCode, ep.spokenDisclosure) },
+    ];
+  }
+  const { names, turns } = dialogue;
   const notice = ep.spokenDisclosure ? disclosureOf(ep.languageCode) : "";
   return [
     ...(notice ? [{ speaker: names[0], text: notice }] : []),
-    ...dialogue.turns.map((t) => ({ speaker: names[t.speaker], text: t.text })),
+    ...turns.map((t) => ({ speaker: names[t.speaker], text: t.text })),
   ];
 }
 

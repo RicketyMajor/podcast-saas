@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { parseDialogue } from "@/convex/lib/dialogue";
+import { dialogueOf } from "@/convex/lib/dialogue";
 import { cn } from "@/lib/utils";
 
 // ~12 lines at leading-7 (1.75rem each).
@@ -29,9 +29,7 @@ export function TranscriptView({
     if (el && !expanded) setOverflows(el.scrollHeight > el.clientHeight + 1);
   }, [transcript, expanded]);
 
-  const [first, second] = hosts ?? [];
-  const names = first && second ? ([first.name, second.name] as const) : null;
-  const dialogue = names ? parseDialogue(transcript, names) : null;
+  const dialogue = dialogueOf(transcript, hosts);
 
   async function copy() {
     try {
@@ -70,11 +68,11 @@ export function TranscriptView({
           !expanded && overflows && "mask-b-from-60% mask-b-to-100%",
         )}
       >
-        {names && dialogue?.ok
+        {dialogue
           ? dialogue.turns.map((turn, i) => (
               <p key={i} className="whitespace-pre-line">
                 <strong className="font-semibold text-foreground">
-                  {names[turn.speaker]}:
+                  {dialogue.names[turn.speaker]}:
                 </strong>{" "}
                 {turn.text}
               </p>

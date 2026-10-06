@@ -42,6 +42,7 @@ import {
   invalid,
   publicHosts,
   text,
+  type HostInput,
 } from "./lib/validation";
 import { getOwnShow } from "./shows";
 
@@ -313,6 +314,13 @@ const storedHosts = (
     voiceId: voiceId(languageCode, h.voiceName),
   }));
 
+/** Same hosts in the same order (null = narration). */
+const sameHosts = (a: HostInput[] | null, b: HostInput[] | null) =>
+  (a?.length ?? 0) === (b?.length ?? 0) &&
+  (a ?? []).every(
+    (h, i) => h.name === b?.[i]?.name && h.voiceName === b?.[i]?.voiceName,
+  );
+
 // The client never decides where files come from: the audio must be the
 // user's own TTS output (covers: lib/covers.ts, ADR-020).
 async function checkAudio(
@@ -457,8 +465,7 @@ export const update = mutation({
         args.voiceName !== voiceNameOf(podcast.voiceId) ||
         args.speakingRate !== (podcast.speakingRate ?? DEFAULT_SPEAKING_RATE) ||
         // Renaming a host or swapping a voice changes what the audio says.
-        JSON.stringify(dialogue?.hosts ?? null) !==
-          JSON.stringify(publicHosts(podcast.hosts)))
+        !sameHosts(dialogue?.hosts ?? null, publicHosts(podcast.hosts)))
     ) {
       throw invalid(
         "El audio ya no coincide con el guion. Vuelve a generarlo.",

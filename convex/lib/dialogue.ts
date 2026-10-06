@@ -106,3 +106,18 @@ export function dialogueScript(
     .map((turn) => `${turn.name}: ${turn.text}`)
     .join("\n\n");
 }
+
+/**
+ * A stored episode's conversation: its names and turns, or null for one-voice
+ * narration (or a script that no longer parses, read as narration).
+ */
+export function dialogueOf(
+  transcript: string,
+  hosts: readonly { name: string }[] | null,
+) {
+  const [first, second] = hosts ?? [];
+  if (!first || !second) return null;
+  const names = [first.name, second.name] as const;
+  const dialogue = parseDialogue(transcript, names);
+  return dialogue.ok ? { names, turns: dialogue.turns } : null;
+}

@@ -2,6 +2,7 @@ import { ConvexError } from "convex/values";
 import { describe, expect, it } from "vitest";
 
 import {
+  dialogueOf,
   dialogueScript,
   hostNameError,
   hostNamesError,
@@ -212,5 +213,22 @@ describe("checkDialogue", () => {
     expect(message(() => checkDialogue("Hola a todos.", "Charon", hosts))).toBe(
       "El guion debe empezar con el nombre de una voz.",
     );
+  });
+});
+
+describe("dialogueOf", () => {
+  const hosts = [{ name: "Martín" }, { name: "Lucía" }];
+  it("is the names and turns of a conversation", () => {
+    expect(dialogueOf("Martín: Hola.\nLucía: Chao.", hosts)).toEqual({
+      names: ["Martín", "Lucía"],
+      turns: [
+        { speaker: 0, text: "Hola." },
+        { speaker: 1, text: "Chao." },
+      ],
+    });
+  });
+  it("is null for narration or a script that no longer parses", () => {
+    expect(dialogueOf("Martín: Hola.\nLucía: Chao.", null)).toBeNull();
+    expect(dialogueOf("Hola a todos.", hosts)).toBeNull();
   });
 });
