@@ -18,8 +18,17 @@ export function EditShow({ showId }: { showId: string }) {
   // The email isn't public: only the author's status query has it.
   const status = useQuery(api.shows.getDirectoryStatus, { showId });
 
+  const isAuthor = !!show && me?._id === show.authorId;
+
   let content;
-  if (show === undefined || me === undefined || status === undefined) {
+  // The form reads the email once, as a default: wait for it (an author's
+  // status is never null once auth settles), or saving would clear it.
+  if (
+    show === undefined ||
+    me === undefined ||
+    status === undefined ||
+    (isAuthor && status === null)
+  ) {
     content = (
       <Loader2
         aria-label="Cargando show"
@@ -28,7 +37,7 @@ export function EditShow({ showId }: { showId: string }) {
     );
   } else if (show === null) {
     content = <ShowNotFound />;
-  } else if (me?._id !== show.authorId) {
+  } else if (!isAuthor || status === null) {
     content = (
       <EmptyState
         icon={Lock}
@@ -45,7 +54,7 @@ export function EditShow({ showId }: { showId: string }) {
       />
     );
   } else {
-    content = <ShowForm show={show} email={status?.email ?? null} />;
+    content = <ShowForm show={show} email={status.email} />;
   }
 
   return (
