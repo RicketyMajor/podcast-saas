@@ -26,12 +26,13 @@ const SPOTIFY_STEPS = [
 ];
 
 /**
- * Only the author sees it (getDirectoryStatus is null for anyone else), and
- * only once the show has a feed. Starts closed: it's a to-do, not the page.
+ * Only the author sees it (getDirectoryStatus is null for anyone else);
+ * ShowDetail renders it once the show has a feed. Starts closed: it's a to-do,
+ * not the page.
  */
 export function DirectoryPanel({ showId }: { showId: Id<"shows"> }) {
   const status = useQuery(api.shows.getDirectoryStatus, { showId });
-  if (!status || status.episodeCount === 0) return null;
+  if (!status) return null;
 
   const missingNotice = status.withoutDisclosure;
   const pending = (missingNotice > 0 ? 1 : 0) + (status.email ? 0 : 1);

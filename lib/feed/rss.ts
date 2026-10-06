@@ -27,7 +27,12 @@ export const audioPath = (podcastId: string, version: string) =>
 export const versionOf = (file: string, ext: ".jpg" | ".mp3") =>
   file.endsWith(ext) ? file.slice(0, -ext.length) : null;
 
-/** What the audio says: the spoken AI notice first, when it has one. */
+/**
+ * What the audio says: the spoken AI notice first, when it has one.
+ * ponytail: rebuilt from today's phrase (convex/ai/voices.ts); rewording a
+ * phrase would desync older episodes' transcripts, so store the voiced text
+ * on the generation and the podcast before ever changing one.
+ */
 export function voicedText(
   transcript: string,
   languageCode: string,

@@ -97,7 +97,6 @@ export const getDirectoryStatus = query({
   returns: v.union(
     v.object({
       email: v.union(v.string(), v.null()),
-      episodeCount: v.number(),
       withoutDisclosure: v.number(),
     }),
     v.null(),
@@ -107,7 +106,9 @@ export const getDirectoryStatus = query({
     const showId = ctx.db.normalizeId("shows", args.showId);
     const show = showId && (await ctx.db.get("shows", showId));
     if (!user || !show || show.authorId !== user._id) return null;
-    // ponytail: newest 100, the same episodes the feed lists.
+    // ponytail: newest 100, the same episodes the feed lists; re-read on
+    // every view of them, like getByShow on the same page. A per-show counter
+    // kept by create/update/remove would avoid it if shows grow large.
     const episodes = await ctx.db
       .query("podcasts")
       .withIndex("by_show", (q) => q.eq("showId", show._id))
@@ -115,7 +116,6 @@ export const getDirectoryStatus = query({
       .take(100);
     return {
       email: show.directoryEmail ?? null,
-      episodeCount: show.episodeCount,
       withoutDisclosure: episodes.filter((p) => !p.spokenDisclosure).length,
     };
   },
@@ -231,12 +231,9 @@ export const getFeed = query({
       .take(100);
     const episodes = await Promise.all(
       podcasts.map(async (p) => {
-        const [file, audioUrl] = await Promise.all([
-          ctx.db.system.get("_storage", p.audioStorageId),
-          ctx.storage.getUrl(p.audioStorageId),
-        ]);
+        const file = await ctx.db.system.get("_storage", p.audioStorageId);
         // An item without its audio breaks podcast apps: leave it out.
-        if (!file || !audioUrl) return null;
+        if (!file) return null;
         return {
           _id: p._id,
           _creationTime: p._creationTime,

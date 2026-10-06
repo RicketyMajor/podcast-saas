@@ -29,7 +29,7 @@ export async function toDirectoryCover(
 /** Downloads a stored cover and answers with its directory version. */
 export async function directoryCoverResponse(imageUrl: string) {
   try {
-    const res = await fetch(imageUrl);
+    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(10_000) });
     if (!res.ok) throw new Error(`cover download ${res.status}`);
     return cachedImage(
       await toDirectoryCover(new Uint8Array(await res.arrayBuffer())),
