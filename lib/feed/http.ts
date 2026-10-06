@@ -25,3 +25,19 @@ export const unavailable = () =>
       "Retry-After": "60",
     },
   });
+
+// Covers and audio change URL when they change (?v=<storageId>), so the CDN
+// can keep them for a day.
+export const cachedImage = (body: Uint8Array<ArrayBuffer>) =>
+  new Response(body, {
+    headers: {
+      "Content-Type": "image/jpeg",
+      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+    },
+  });
+
+export const redirect = (url: string) =>
+  new Response(null, {
+    status: 302,
+    headers: { Location: url, "Cache-Control": "public, s-maxage=86400" },
+  });
