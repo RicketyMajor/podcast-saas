@@ -25,7 +25,13 @@ import {
   TITLE_MIN_CHARS,
 } from "./lib/limits";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
-import { invalid, optionalEmail, text } from "./lib/validation";
+import {
+  hostsResult,
+  invalid,
+  optionalEmail,
+  publicHosts,
+  text,
+} from "./lib/validation";
 
 // The "Shows" section above the episode results.
 const SHOW_SEARCH_RESULTS = 6;
@@ -197,6 +203,7 @@ const feedEpisode = v.object({
   audioType: v.string(),
   imageStorageId: v.union(v.id("_storage"), v.null()), // null = show's cover
   spokenDisclosure: v.boolean(),
+  hosts: hostsResult, // null = one-voice narration
 });
 
 // What a podcast app needs (RSS, phase 19): only data the show and detail
@@ -247,6 +254,7 @@ export const getFeed = query({
           audioType: file.contentType ?? "audio/mpeg", // all Waves audio is MP3
           imageStorageId: p.imageStorageId ?? null,
           spokenDisclosure: p.spokenDisclosure === true,
+          hosts: publicHosts(p.hosts),
         };
       }),
     );

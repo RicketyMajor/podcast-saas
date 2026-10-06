@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,6 +9,7 @@ import {
   renameSpeaker,
   sameName,
 } from "../convex/lib/dialogue";
+import { checkDialogue } from "../convex/lib/validation";
 
 const NAMES = ["Martín", "Lucía"] as const;
 
@@ -158,5 +160,62 @@ describe("dialogueScript", () => {
         NAMES,
       ),
     ).toBe("Martín: Hola, Lucía.\n\nLucía: Hola, Martín.");
+  });
+});
+
+describe("checkDialogue", () => {
+  const SCRIPT = "Martín: Hola, Lucía.\nLucía: Hola, Martín.";
+  const martin = { name: " Martín ", voiceName: "Charon" };
+  const hosts = [martin, { name: "Lucía", voiceName: "Aoede" }];
+  const message = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ConvexError) return error.data.message;
+    }
+    return null;
+  };
+
+  it("is null for narration", () => {
+    expect(checkDialogue(SCRIPT, "Charon", undefined)).toBeNull();
+  });
+  it("returns trimmed hosts and the turns", () => {
+    expect(checkDialogue(SCRIPT, "Charon", hosts)).toEqual({
+      hosts: [
+        { name: "Martín", voiceName: "Charon" },
+        { name: "Lucía", voiceName: "Aoede" },
+      ],
+      turns: [
+        { speaker: 0, text: "Hola, Lucía." },
+        { speaker: 1, text: "Hola, Martín." },
+      ],
+    });
+  });
+  it("rejects incoherent hosts and scripts", () => {
+    expect(message(() => checkDialogue(SCRIPT, "Charon", [martin]))).toBe(
+      "Una conversación lleva exactamente dos voces.",
+    );
+    expect(
+      message(() =>
+        checkDialogue(SCRIPT, "Charon", [
+          martin,
+          { name: "Lucía", voiceName: "Charon" },
+        ]),
+      ),
+    ).toBe("Elige dos voces distintas.");
+    expect(
+      message(() =>
+        checkDialogue(SCRIPT, "Charon", [
+          martin,
+          { name: "Lucía", voiceName: "Nope" },
+        ]),
+      ),
+    ).toBe("Voz no disponible.");
+    expect(message(() => checkDialogue(SCRIPT, "Puck", hosts))).toBe(
+      "La voz 1 no coincide con la voz del episodio.",
+    );
+    expect(
+      message(() => checkDialogue("Hola a todos.", "Charon", hosts)),
+    ).toBe("El guion debe empezar con el nombre de una voz.");
   });
 });

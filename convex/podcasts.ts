@@ -35,7 +35,14 @@ import {
   TITLE_MIN_CHARS,
 } from "./lib/limits";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
-import { invalid, text } from "./lib/validation";
+import {
+  checkDialogue,
+  hostInput,
+  hostsResult,
+  invalid,
+  publicHosts,
+  text,
+} from "./lib/validation";
 import { getOwnShow } from "./shows";
 
 // What lists and cards need: no transcript, URLs already resolved.
@@ -171,6 +178,7 @@ const podcastDetail = v.object({
   voiceName: v.string(),
   speakingRate: v.number(),
   spokenDisclosure: v.boolean(), // its audio opens with the AI notice
+  hosts: hostsResult, // null = one-voice narration
   audioDurationSec: v.number(),
   showId: v.id("shows"),
   showTitle: v.union(v.string(), v.null()), // null only if the show vanished
@@ -211,6 +219,7 @@ export const getById = query({
       voiceName: voiceNameOf(p.voiceId),
       speakingRate: p.speakingRate ?? DEFAULT_SPEAKING_RATE,
       spokenDisclosure: p.spokenDisclosure === true,
+      hosts: publicHosts(p.hosts),
       audioDurationSec: p.audioDurationSec,
       showId: p.showId,
       showTitle: show?.title ?? null,
@@ -256,6 +265,8 @@ const podcastFields = {
   voiceName: v.string(),
   speakingRate: v.number(),
   imagePrompt: v.optional(v.string()),
+  // Two named hosts = a conversation; the first one speaks with voiceName.
+  hosts: v.optional(v.array(hostInput)),
 };
 
 function checkFields(args: {
@@ -292,6 +303,16 @@ function checkFields(args: {
   };
 }
 
+/** What the podcast stores for a conversation (undefined = narration). */
+const storedHosts = (
+  languageCode: string,
+  dialogue: ReturnType<typeof checkDialogue>,
+) =>
+  dialogue?.hosts.map((h) => ({
+    name: h.name,
+    voiceId: voiceId(languageCode, h.voiceName),
+  }));
+
 // The client never decides where files come from: the audio must be the
 // user's own TTS output (covers: lib/covers.ts, ADR-020).
 async function checkAudio(
@@ -327,6 +348,10 @@ export const create = mutation({
     const user = await getCurrentUserOrThrow(ctx);
     const show = await getOwnShow(ctx, user, args.showId);
     const fields = checkFields(args);
+    const hosts = storedHosts(
+      args.languageCode,
+      checkDialogue(fields.transcript, args.voiceName, args.hosts),
+    );
     const audio = await checkAudio(ctx, user._id, args.audioStorageId);
     const cover = args.imageStorageId
       ? await checkCover(ctx, user._id, args.imageStorageId)
@@ -346,6 +371,7 @@ export const create = mutation({
       audioStorageId: args.audioStorageId,
       audioDurationSec: audio.durationSec,
       spokenDisclosure: audio.spokenDisclosure,
+      ...(hosts && { hosts }),
       ...(cover && {
         imageStorageId: args.imageStorageId,
         imageSource: cover.imageSource,
@@ -412,6 +438,11 @@ export const update = mutation({
     // Moving into a show checks that show too, not just the episode.
     const show = await getOwnShow(ctx, user, args.showId);
     const fields = checkFields(args);
+    const dialogue = checkDialogue(
+      fields.transcript,
+      args.voiceName,
+      args.hosts,
+    );
 
     const newAudio =
       args.audioStorageId !== undefined &&
@@ -424,7 +455,10 @@ export const update = mutation({
       (fields.transcript !== podcast.transcript ||
         args.languageCode !== podcast.languageCode ||
         args.voiceName !== voiceNameOf(podcast.voiceId) ||
-        args.speakingRate !== (podcast.speakingRate ?? DEFAULT_SPEAKING_RATE))
+        args.speakingRate !== (podcast.speakingRate ?? DEFAULT_SPEAKING_RATE) ||
+        // Renaming a host or swapping a voice changes what the audio says.
+        JSON.stringify(dialogue?.hosts ?? null) !==
+          JSON.stringify(publicHosts(podcast.hosts)))
     ) {
       throw invalid(
         "El audio ya no coincide con el guion. Vuelve a generarlo.",
@@ -443,6 +477,8 @@ export const update = mutation({
       languageCode: args.languageCode,
       voiceId: voiceId(args.languageCode, args.voiceName),
       speakingRate: args.speakingRate,
+      // undefined removes it: back to narration.
+      hosts: storedHosts(args.languageCode, dialogue),
       // Edits never change the author, so authorName is still current.
       searchText: searchTextOf(fields.title, podcast.authorName, show.title),
       ...(newAudio && {

@@ -59,6 +59,11 @@ export default defineSchema({
     speakingRate: v.optional(v.number()), // Chirp 3 HD pace, 0.25–2.0
     // Its audio opens with the spoken AI notice; copied from the generation.
     spokenDisclosure: v.optional(v.boolean()),
+    // Two named hosts = a conversation (phase 21); absent = one-voice
+    // narration. voiceId above stays the first host's voice.
+    hosts: v.optional(
+      v.array(v.object({ name: v.string(), voiceId: v.string() })),
+    ),
     audioStorageId: v.id("_storage"),
     audioDurationSec: v.number(),
     // No own cover = the show's cover. Source and prompt go with the file.

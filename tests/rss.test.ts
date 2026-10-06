@@ -21,6 +21,7 @@ const episode = (
   audioType: "audio/mpeg",
   imageStorageId: null,
   spokenDisclosure: false,
+  hosts: null,
   ...extra,
 });
 
