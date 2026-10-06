@@ -4,13 +4,37 @@
 // language: "es-US" + "Charon" → "es-US-Chirp3-HD-Charon".
 // Samples: public/voices/<lang>-<Voice>.mp3 (scripts/voice-samples.mjs).
 
+// Spoken at the start of an episode when its author keeps the notice on:
+// Apple wants AI voices disclosed "in the content and metadata" (§1.11).
+// Plural so it also fits a two-voice conversation (phase 21).
+const ES_DISCLOSURE =
+  "Este episodio fue creado con voces generadas por inteligencia artificial.";
+
 // Locales with Chirp 3 HD voices (docs/screens.md §2.3). Labels are UI text.
 export const LANGUAGES = [
-  { code: "es-US", label: "Español (Latinoamérica)" },
-  { code: "es-ES", label: "Español (España)" },
-  { code: "en-US", label: "Inglés (EE. UU.)" },
-  { code: "pt-BR", label: "Portugués (Brasil)" },
+  {
+    code: "es-US",
+    label: "Español (Latinoamérica)",
+    disclosure: ES_DISCLOSURE,
+  },
+  { code: "es-ES", label: "Español (España)", disclosure: ES_DISCLOSURE },
+  {
+    code: "en-US",
+    label: "Inglés (EE. UU.)",
+    disclosure: "This episode was created with AI-generated voices.",
+  },
+  {
+    code: "pt-BR",
+    label: "Portugués (Brasil)",
+    disclosure:
+      "Este episódio foi criado com vozes geradas por inteligência artificial.",
+  },
 ] as const;
+
+/** The spoken AI notice for a language ("" if Waves doesn't offer it). */
+export function disclosureOf(languageCode: string): string {
+  return LANGUAGES.find((l) => l.code === languageCode)?.disclosure ?? "";
+}
 
 export type Voice = {
   name: string;

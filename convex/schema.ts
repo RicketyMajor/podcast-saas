@@ -30,6 +30,8 @@ export default defineSchema({
     languageCode: v.string(), // default for its new episodes
     category: v.string(), // Apple Podcasts text, one of SHOW_CATEGORIES
     explicit: v.boolean(),
+    // Public in the feed; Spotify mails its ownership code here (phase 20).
+    directoryEmail: v.optional(v.string()),
     imageStorageId: v.id("_storage"),
     imageSource: v.union(v.literal("ai"), v.literal("upload")),
     imagePrompt: v.optional(v.string()),
@@ -55,6 +57,8 @@ export default defineSchema({
     voiceProvider: v.literal("google"),
     voiceId: v.string(), // e.g. "es-US-Chirp3-HD-<Voice>"
     speakingRate: v.optional(v.number()), // Chirp 3 HD pace, 0.25–2.0
+    // Its audio opens with the spoken AI notice; copied from the generation.
+    spokenDisclosure: v.optional(v.boolean()),
     audioStorageId: v.id("_storage"),
     audioDurationSec: v.number(),
     // No own cover = the show's cover. Source and prompt go with the file.
@@ -88,6 +92,8 @@ export default defineSchema({
       v.literal("error"),
     ),
     errorMessage: v.optional(v.string()),
+    // Audio only: whether the notice was voiced first (the server's record).
+    spokenDisclosure: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"]) // + implicit _creationTime → daily quotas
     .index("by_kind", ["kind"]) // + implicit _creationTime → global monthly TTS cap

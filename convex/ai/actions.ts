@@ -27,7 +27,7 @@ import {
 import { cloudflareImage } from "./providers/cloudflareImage";
 import { geminiText } from "./providers/geminiText";
 import { googleTts } from "./providers/googleTts";
-import { LANGUAGES, VOICES, voiceId } from "./voices";
+import { disclosureOf, LANGUAGES, VOICES, voiceId } from "./voices";
 
 function invalid(
   message: string,
@@ -71,6 +71,8 @@ export const generateAudio = action({
     languageCode: v.string(),
     voiceName: v.string(),
     speakingRate: v.number(),
+    // Optional so a tab still running the previous client keeps working.
+    spokenDisclosure: v.optional(v.boolean()),
   },
   returns: v.object({
     storageId: v.id("_storage"),
@@ -98,6 +100,9 @@ export const generateAudio = action({
     }
 
     const apiKey = requireEnv("GOOGLE_TTS_API_KEY", "audio");
+    // Not part of the script's 5,000-char limit, but voiced and billed.
+    const notice = args.spokenDisclosure ? disclosureOf(args.languageCode) : "";
+    const spokenChars = script.length + notice.length;
 
     const generationId = await ctx.runMutation(
       internal.ai.generations.reserveGeneration,
@@ -106,8 +111,9 @@ export const generateAudio = action({
         kind: "audio",
         provider: GOOGLE_TTS.provider,
         model: GOOGLE_TTS.model,
-        inputChars: script.length,
-        estimatedCostUsd: script.length * GOOGLE_TTS.usdPerChar,
+        inputChars: spokenChars,
+        estimatedCostUsd: spokenChars * GOOGLE_TTS.usdPerChar,
+        spokenDisclosure: notice !== "",
       },
     );
 
@@ -121,15 +127,18 @@ export const generateAudio = action({
         tts.maxBytesPerRequest,
       );
       const parts = await Promise.all(
-        chunkScript(script, chunkBytes).map(async (text) => {
-          const pcm = await tts.synthesize({
-            text,
-            voiceId: voiceId(args.languageCode, args.voiceName),
-            languageCode: args.languageCode,
-            speakingRate: args.speakingRate,
-          });
-          return pcm.samples;
-        }),
+        // The notice is its own first part: same voice, then the usual gap.
+        [...(notice ? [notice] : []), ...chunkScript(script, chunkBytes)].map(
+          async (text) => {
+            const pcm = await tts.synthesize({
+              text,
+              voiceId: voiceId(args.languageCode, args.voiceName),
+              languageCode: args.languageCode,
+              speakingRate: args.speakingRate,
+            });
+            return pcm.samples;
+          },
+        ),
       );
 
       const gapSamples = Math.round(
@@ -154,7 +163,7 @@ export const generateAudio = action({
         outcome: { status: "success", storageId, outputSeconds: durationSec },
       });
       console.log(
-        `audio ok: ${script.length} chars, ${parts.length} parts, ${durationSec.toFixed(1)} s, ${mp3.length} bytes`,
+        `audio ok: ${spokenChars} chars${notice ? " (with notice)" : ""}, ${parts.length} parts, ${durationSec.toFixed(1)} s, ${mp3.length} bytes`,
       );
       return { storageId, url, durationSec };
     } catch (error) {

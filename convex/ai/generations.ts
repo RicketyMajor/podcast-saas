@@ -76,6 +76,7 @@ export const reserveGeneration = internalMutation({
     model: v.string(),
     inputChars: v.number(),
     estimatedCostUsd: v.number(),
+    spokenDisclosure: v.optional(v.boolean()),
   },
   returns: v.id("aiGenerations"),
   handler: async (ctx, args) => {
