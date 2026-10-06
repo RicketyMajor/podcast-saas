@@ -40,6 +40,8 @@ export const podcastFormSchema = z.object({
   // Radix Select works with strings; converted to a number on submit.
   speakingRate: z.enum(SPEAKING_RATES.map(String)),
   script: text("El guion", SCRIPT_MIN_CHARS, SCRIPT_MAX_CHARS),
+  // Voice the AI notice first (Apple §1.11); the server records what it did.
+  spokenDisclosure: z.boolean(),
 });
 
 export type PodcastFormValues = z.infer<typeof podcastFormSchema>;

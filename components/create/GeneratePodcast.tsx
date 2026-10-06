@@ -22,7 +22,7 @@ import {
 
 export type AudioSource = Pick<
   PodcastFormValues,
-  "script" | "languageCode" | "voiceName" | "speakingRate"
+  "script" | "languageCode" | "voiceName" | "speakingRate" | "spokenDisclosure"
 >;
 
 export type GeneratedAudio = {
@@ -43,7 +43,8 @@ export function sameSource(a: AudioSource, b: AudioSource) {
     a.script.trim() === b.script.trim() &&
     a.languageCode === b.languageCode &&
     a.voiceName === b.voiceName &&
-    a.speakingRate === b.speakingRate
+    a.speakingRate === b.speakingRate &&
+    a.spokenDisclosure === b.spokenDisclosure
   );
 }
 
@@ -63,11 +64,24 @@ export function GeneratePodcast({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [script, languageCode, voiceName, speakingRate] = useWatch({
-    control,
-    name: ["script", "languageCode", "voiceName", "speakingRate"],
-  });
-  const source: AudioSource = { script, languageCode, voiceName, speakingRate };
+  const [script, languageCode, voiceName, speakingRate, spokenDisclosure] =
+    useWatch({
+      control,
+      name: [
+        "script",
+        "languageCode",
+        "voiceName",
+        "speakingRate",
+        "spokenDisclosure",
+      ],
+    });
+  const source: AudioSource = {
+    script,
+    languageCode,
+    voiceName,
+    speakingRate,
+    spokenDisclosure,
+  };
   const canGenerate =
     podcastFormSchema.shape.script.safeParse(script).success &&
     podcastFormSchema.shape.voiceName.safeParse(voiceName).success;
@@ -82,6 +96,7 @@ export function GeneratePodcast({
         languageCode,
         voiceName,
         speakingRate: Number(speakingRate),
+        spokenDisclosure,
       });
       onAudioChange({ ...result, source });
       toast.success("Audio generado.");

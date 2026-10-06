@@ -24,10 +24,22 @@ describe("showFormSchema", () => {
     languageCode: "es-US",
     category: "Science",
     explicit: false,
+    directoryEmail: "",
   };
 
   it("accepts a complete show", () => {
     expect(showFormSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("takes a blank or valid directory email, not a broken one", () => {
+    expect(
+      showFormSchema.safeParse({ ...valid, directoryEmail: " ana@waves.test " })
+        .success,
+    ).toBe(true);
+    expect(
+      showFormSchema.safeParse({ ...valid, directoryEmail: "ana@waves" })
+        .success,
+    ).toBe(false);
   });
 
   it("only takes Apple's category text, not the Spanish label", () => {

@@ -15,9 +15,11 @@ import { ShowForm } from "./ShowForm";
 export function EditShow({ showId }: { showId: string }) {
   const show = useQuery(api.shows.getById, { showId });
   const me = useQuery(api.users.current);
+  // The email isn't public: only the author's status query has it.
+  const status = useQuery(api.shows.getDirectoryStatus, { showId });
 
   let content;
-  if (show === undefined || me === undefined) {
+  if (show === undefined || me === undefined || status === undefined) {
     content = (
       <Loader2
         aria-label="Cargando show"
@@ -43,7 +45,7 @@ export function EditShow({ showId }: { showId: string }) {
       />
     );
   } else {
-    content = <ShowForm show={show} />;
+    content = <ShowForm show={show} email={status?.email ?? null} />;
   }
 
   return (

@@ -29,8 +29,10 @@ import { ScriptDialog } from "@/components/create/ScriptDialog";
 import type { PodcastDetailData } from "@/components/podcast/PodcastDetailHeader";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
 import { PillButton } from "@/components/shared/PillButton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
@@ -112,6 +114,7 @@ export function PodcastForm({
         voiceName: podcast.voiceName as PodcastFormValues["voiceName"],
         speakingRate: String(podcast.speakingRate),
         script: podcast.transcript,
+        spokenDisclosure: podcast.spokenDisclosure,
       }
     : {
         showId: initialShow?._id ?? "",
@@ -122,6 +125,7 @@ export function PodcastForm({
         voiceName: DEFAULT_VOICE_NAME,
         speakingRate: String(DEFAULT_SPEAKING_RATE),
         script: "",
+        spokenDisclosure: true,
       };
   const {
     control,
@@ -162,6 +166,7 @@ export function PodcastForm({
     languageCode,
     voiceName,
     speakingRate,
+    spokenDisclosure,
   ] = useWatch({
     control,
     name: [
@@ -172,12 +177,19 @@ export function PodcastForm({
       "languageCode",
       "voiceName",
       "speakingRate",
+      "spokenDisclosure",
     ],
   });
   const show = shows.find((s) => s._id === showId);
   const audioReady =
     audio !== null &&
-    sameSource(audio.source, { script, languageCode, voiceName, speakingRate });
+    sameSource(audio.source, {
+      script,
+      languageCode,
+      voiceName,
+      speakingRate,
+      spokenDisclosure,
+    });
   const canPublish = isValid && audioReady;
   // The cover you make (or the show's) lights the room, like a playing one would.
   usePageCover(image?.url ?? show?.imageUrl);
@@ -512,6 +524,32 @@ export function PodcastForm({
                 )}
               />
             </div>
+            <Controller
+              name="spokenDisclosure"
+              control={control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="spokenDisclosure"
+                    checked={field.value}
+                    onCheckedChange={(checked) =>
+                      field.onChange(checked === true)
+                    }
+                    onBlur={field.onBlur}
+                    aria-describedby="spokenDisclosure-help"
+                  />
+                  <FieldContent>
+                    <FieldLabel htmlFor="spokenDisclosure">
+                      Incluir aviso hablado de IA
+                    </FieldLabel>
+                    <FieldDescription id="spokenDisclosure-help">
+                      Apple Podcasts lo exige. Suma una frase breve al inicio
+                      del audio.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+              )}
+            />
             <GeneratePodcast
               control={control}
               audio={audio}

@@ -51,13 +51,16 @@ const LEGEND =
 
 /**
  * Without `show` it creates one; with it, it edits that show. `next="create"`
- * sends a new show straight back to the create form with it picked.
+ * sends a new show straight back to the create form with it picked. `email`
+ * is the show's directory email, which only its author can read.
  */
 export function ShowForm({
   show,
+  email,
   next,
 }: {
   show?: ShowDetailData;
+  email?: string | null;
   next?: "create";
 }) {
   const router = useRouter();
@@ -78,6 +81,7 @@ export function ShowForm({
           languageCode: show.languageCode as ShowFormValues["languageCode"],
           category: show.category as ShowFormValues["category"],
           explicit: show.explicit,
+          directoryEmail: email ?? "",
         }
       : {
           title: "",
@@ -85,6 +89,7 @@ export function ShowForm({
           languageCode: "es-US",
           category: undefined,
           explicit: false,
+          directoryEmail: "",
         },
   });
 
@@ -273,6 +278,32 @@ export function ShowForm({
                     y Spotify piden indicarlo.
                   </FieldDescription>
                 </FieldContent>
+              </Field>
+            )}
+          />
+          <Controller
+            name="directoryEmail"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="show-email">
+                  Email para directorios (opcional)
+                </FieldLabel>
+                <Input
+                  {...field}
+                  id="show-email"
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  aria-invalid={fieldState.invalid}
+                  aria-describedby="show-email-help"
+                  className={CONTROL}
+                />
+                <FieldDescription id="show-email-help">
+                  Será público en el feed. Spotify lo usa para verificar que el
+                  show es tuyo; puedes usar un alias.
+                </FieldDescription>
+                <FieldError errors={[fieldState.error]} />
               </Field>
             )}
           />
