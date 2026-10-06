@@ -7,7 +7,7 @@ import { ConvexError } from "convex/values";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -63,7 +63,13 @@ import {
   SCRIPT_MAX_CHARS,
   SPEAKING_RATES,
 } from "@/convex/lib/limits";
-import { hostNameError, renameSpeaker, sameName } from "@/convex/lib/dialogue";
+import {
+  hostNameError,
+  hostNamesError,
+  parseDialogue,
+  renameSpeaker,
+  sameName,
+} from "@/convex/lib/dialogue";
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { SPEAKING_RATE_LABELS } from "@/lib/constants";
 import { cn, formatCount } from "@/lib/utils";
@@ -234,6 +240,11 @@ export function PodcastForm({
   const conversationReady =
     conversationIssues({ format, script, voiceName, voice2Name, hostNames })
       .length === 0;
+  // Back in narration, a script still labeled for the hosts voices the names.
+  const labeledNarration =
+    !conversation &&
+    hostNamesError(hostNames) === null &&
+    parseDialogue(script, hostNames).ok;
 
   // Conversation rules span fields: recheck the ones already showing errors,
   // and voice 2 always (a select has no half-typed state to wait out).
@@ -249,10 +260,27 @@ export function PodcastForm({
   // empty or repeated one on the way doesn't strand the old labels.
   // A copy: the published audio's source keeps the original names.
   const labelNames = useRef<[string, string]>([...defaults.hostNames]);
+  // Whenever the script reads right with the current names, those names are
+  // its labels: a generated or hand-edited script resyncs them.
+  useEffect(() => {
+    if (
+      hostNamesError(hostNames) === null &&
+      parseDialogue(script, hostNames).ok
+    ) {
+      labelNames.current = [hostNames[0].trim(), hostNames[1].trim()];
+    }
+  }, [script, hostNames]);
   function renameHost(index: 0 | 1, to: string) {
     setValue(`hostNames.${index}`, to, { shouldDirty: true });
-    const other = getValues(`hostNames.${index === 0 ? 1 : 0}`);
-    if (hostNameError(to) || sameName(to, other)) return;
+    const otherIndex = index === 0 ? 1 : 0;
+    // Never onto the other host's name or its labels: that would merge them.
+    if (
+      hostNameError(to) ||
+      sameName(to, getValues(`hostNames.${otherIndex}`)) ||
+      sameName(to, labelNames.current[otherIndex])
+    ) {
+      return;
+    }
     const from = labelNames.current[index];
     labelNames.current[index] = to;
     const current = getValues("script");
@@ -586,7 +614,9 @@ export function PodcastForm({
                     rows={12}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      conversation ? "script-help script-count" : "script-count"
+                      conversation || labeledNarration
+                        ? "script-help script-count"
+                        : "script-count"
                     }
                     // The format, shown with the hosts' own names.
                     placeholder={
@@ -597,14 +627,15 @@ export function PodcastForm({
                     className="min-h-64"
                   />
                   <div className="flex items-start gap-4">
-                    {conversation && (
+                    {(conversation || labeledNarration) && (
                       <FieldDescription
                         id="script-help"
                         // Side by side with the counter, not stacked above it.
                         className="nth-last-2:mt-0"
                       >
-                        Cada intervención empieza con «Nombre:». Las líneas sin
-                        nombre siguen con la misma voz.
+                        {conversation
+                          ? "Cada intervención empieza con «Nombre:». Las líneas sin nombre siguen con la misma voz."
+                          : "Este guion tiene los nombres de las voces: en Narración también se leerán en voz alta."}
                       </FieldDescription>
                     )}
                     <FieldDescription
