@@ -1,6 +1,7 @@
 import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "@/convex/_generated/api";
+import { disclosureOf } from "@/convex/ai/voices";
 
 import { cdata, escapeXml as e } from "./xml";
 
@@ -11,6 +12,25 @@ export const AI_NOTE = "Voz generada con IA en Waves.";
 export const feedPath = (showId: string) => `/shows/${showId}/feed.xml`;
 export const transcriptPath = (podcastId: string, ext: "txt" | "vtt") =>
   `/podcasts/${podcastId}/transcript.${ext}`;
+// Directory-ready files; ?v=<storageId> changes the URL when the file changes
+// (Spotify only re-downloads a new URL; the CDN caches them a day).
+export const coverPath = (
+  kind: "shows" | "podcasts",
+  id: string,
+  version: string,
+) => `/${kind}/${id}/cover.jpg?v=${version}`;
+export const audioPath = (podcastId: string, version: string) =>
+  `/podcasts/${podcastId}/audio.mp3?v=${version}`;
+
+/** What the audio says: the spoken AI notice first, when it has one. */
+export function voicedText(
+  transcript: string,
+  languageCode: string,
+  spokenDisclosure: boolean,
+) {
+  const notice = spokenDisclosure ? disclosureOf(languageCode) : "";
+  return notice ? `${notice}\n\n${transcript}` : transcript;
+}
 
 // Paragraphs split like TranscriptView: blank lines.
 const html = (text: string) =>
@@ -26,10 +46,13 @@ const date = (ms: number) => new Date(ms).toUTCString();
 /** RSS 2.0 + iTunes + Podcasting 2.0 tags for a show with episodes. */
 export function buildFeed(feed: Feed, origin: string): string {
   const showUrl = `${origin}/shows/${feed._id}`;
-  const cover = feed.imageUrl
+  const coverUrl = origin + coverPath("shows", feed._id, feed.imageStorageId);
+  // Spotify mails its ownership code to itunes:email; the lock's owner can
+  // unlock a move to another host. No email: neither tag.
+  const owner = feed.directoryEmail
     ? [
-        `<itunes:image href="${e(feed.imageUrl)}" />`,
-        `<image><url>${e(feed.imageUrl)}</url><title>${e(feed.title)}</title><link>${e(showUrl)}</link></image>`,
+        `<itunes:owner><itunes:name>${e(feed.authorName)}</itunes:name><itunes:email>${e(feed.directoryEmail)}</itunes:email></itunes:owner>`,
+        `<podcast:locked owner="${e(feed.directoryEmail)}">yes</podcast:locked>`,
       ]
     : [];
   const newest = feed.episodes[0];
@@ -43,10 +66,12 @@ export function buildFeed(feed: Feed, origin: string): string {
       `<link>${e(`${origin}/podcasts/${ep._id}`)}</link>`,
       `<pubDate>${date(ep._creationTime)}</pubDate>`,
       `<description>${e(`${ep.description}\n\n${AI_NOTE}`)}</description>`,
-      `<content:encoded>${cdata(`${html(ep.description)}<p>${AI_NOTE}</p><h3>Transcripción</h3>${html(ep.transcript)}`)}</content:encoded>`,
-      `<enclosure url="${e(ep.audioUrl)}" length="${ep.audioSize}" type="${e(ep.audioType)}" />`,
+      `<content:encoded>${cdata(`${html(ep.description)}<p>${AI_NOTE}</p><h3>Transcripción</h3>${html(voicedText(ep.transcript, ep.languageCode, ep.spokenDisclosure))}`)}</content:encoded>`,
+      `<enclosure url="${e(origin + audioPath(ep._id, ep.audioStorageId))}" length="${ep.audioSize}" type="${e(ep.audioType)}" />`,
       `<itunes:duration>${Math.round(ep.audioDurationSec)}</itunes:duration>`,
-      ep.imageUrl ? `<itunes:image href="${e(ep.imageUrl)}" />` : "",
+      ep.imageStorageId
+        ? `<itunes:image href="${e(origin + coverPath("podcasts", ep._id, ep.imageStorageId))}" />`
+        : "",
       transcript("txt", "text/plain"),
       transcript("vtt", "text/vtt", ' rel="captions"'),
       "</item>",
@@ -68,7 +93,9 @@ export function buildFeed(feed: Feed, origin: string): string {
       ? `<lastBuildDate>${date(newest._creationTime)}</lastBuildDate>`
       : "",
     `<itunes:author>${e(feed.authorName)}</itunes:author>`,
-    ...cover,
+    ...owner,
+    `<itunes:image href="${e(coverUrl)}" />`,
+    `<image><url>${e(coverUrl)}</url><title>${e(feed.title)}</title><link>${e(showUrl)}</link></image>`,
     `<itunes:category text="${e(feed.category)}" />`,
     `<itunes:explicit>${feed.explicit}</itunes:explicit>`,
     "<itunes:type>episodic</itunes:type>",

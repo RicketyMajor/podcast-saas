@@ -190,14 +190,16 @@ const feedEpisode = v.object({
   transcript: v.string(),
   languageCode: v.string(),
   audioDurationSec: v.number(),
-  audioUrl: v.string(),
+  audioStorageId: v.id("_storage"),
   audioSize: v.number(),
   audioType: v.string(),
-  imageUrl: v.union(v.string(), v.null()),
+  imageStorageId: v.union(v.id("_storage"), v.null()), // null = show's cover
+  spokenDisclosure: v.boolean(),
 });
 
 // What a podcast app needs (RSS, phase 19): only data the show and detail
-// pages already make public. No episodes, no feed: like discovery.
+// pages already make public, plus the directory email its author chose to
+// publish (phase 20). No episodes, no feed: like discovery.
 export const getFeed = query({
   args: { showId: v.string() },
   returns: v.union(
@@ -209,7 +211,8 @@ export const getFeed = query({
       languageCode: v.string(),
       category: v.string(),
       explicit: v.boolean(),
-      imageUrl: v.union(v.string(), v.null()),
+      directoryEmail: v.union(v.string(), v.null()),
+      imageStorageId: v.id("_storage"),
       episodes: v.array(feedEpisode),
     }),
     v.null(),
@@ -226,10 +229,9 @@ export const getFeed = query({
       .take(100);
     const episodes = await Promise.all(
       podcasts.map(async (p) => {
-        const [file, audioUrl, imageUrl] = await Promise.all([
+        const [file, audioUrl] = await Promise.all([
           ctx.db.system.get("_storage", p.audioStorageId),
           ctx.storage.getUrl(p.audioStorageId),
-          p.imageStorageId ? ctx.storage.getUrl(p.imageStorageId) : null,
         ]);
         // An item without its audio breaks podcast apps: leave it out.
         if (!file || !audioUrl) return null;
@@ -241,10 +243,11 @@ export const getFeed = query({
           transcript: p.transcript,
           languageCode: p.languageCode,
           audioDurationSec: p.audioDurationSec,
-          audioUrl,
+          audioStorageId: p.audioStorageId,
           audioSize: file.size,
           audioType: file.contentType ?? "audio/mpeg", // all Waves audio is MP3
-          imageUrl,
+          imageStorageId: p.imageStorageId ?? null,
+          spokenDisclosure: p.spokenDisclosure === true,
         };
       }),
     );
@@ -258,7 +261,8 @@ export const getFeed = query({
       languageCode: show.languageCode,
       category: show.category,
       explicit: show.explicit,
-      imageUrl: await ctx.storage.getUrl(show.imageStorageId),
+      directoryEmail: show.directoryEmail ?? null,
+      imageStorageId: show.imageStorageId,
       episodes: listed,
     };
   },

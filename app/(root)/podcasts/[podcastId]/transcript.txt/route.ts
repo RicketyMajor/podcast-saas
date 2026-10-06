@@ -2,6 +2,7 @@ import { fetchQuery } from "convex/nextjs";
 
 import { api } from "@/convex/_generated/api";
 import { cached, notFound, unavailable } from "@/lib/feed/http";
+import { voicedText } from "@/lib/feed/rss";
 
 // The script exactly as voiced (RSS podcast:transcript, text/plain).
 export async function GET(
@@ -15,7 +16,11 @@ export async function GET(
   if (podcast === undefined) return unavailable();
   if (podcast === null) return notFound("Transcripción no encontrada");
   return cached(
-    podcast.transcript.replace(/\r\n?/g, "\n"),
+    voicedText(
+      podcast.transcript,
+      podcast.languageCode,
+      podcast.spokenDisclosure,
+    ).replace(/\r\n?/g, "\n"),
     "text/plain; charset=utf-8",
   );
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Id } from "../convex/_generated/dataModel";
-import { buildFeed, type Feed } from "../lib/feed/rss";
+import { buildFeed, voicedText, type Feed } from "../lib/feed/rss";
 import { cdata, escapeXml } from "../lib/feed/xml";
 
 const episode = (
@@ -16,10 +16,11 @@ const episode = (
   transcript: "Hola.\n\nAdiós.",
   languageCode: "es-US",
   audioDurationSec: 61.6,
-  audioUrl: `https://x.convex.cloud/api/storage/${id}`,
+  audioStorageId: `audio-${id}` as Id<"_storage">,
   audioSize: 1234,
   audioType: "audio/mpeg",
-  imageUrl: null,
+  imageStorageId: null,
+  spokenDisclosure: false,
   ...extra,
 });
 
@@ -31,10 +32,12 @@ const feed: Feed = {
   languageCode: "es-US",
   category: "Society & Culture",
   explicit: false,
-  imageUrl: "https://x.convex.cloud/api/storage/cover",
+  imageStorageId: "cover" as Id<"_storage">,
+  directoryEmail: null,
   episodes: [
     episode("ep2", Date.UTC(2026, 9, 4), {
-      imageUrl: "https://x.convex.cloud/api/storage/own",
+      imageStorageId: "own" as Id<"_storage">,
+      spokenDisclosure: true,
     }),
     episode("ep1", Date.UTC(2026, 9, 1)),
   ],
@@ -72,7 +75,7 @@ describe("buildFeed", () => {
       xml.indexOf('<guid isPermaLink="false">ep1</guid>'),
     );
     expect(xml).toContain(
-      '<enclosure url="https://x.convex.cloud/api/storage/ep2" length="1234" type="audio/mpeg" />',
+      '<enclosure url="https://waves.test/podcasts/ep2/audio.mp3?v=audio-ep2" length="1234" type="audio/mpeg" />',
     );
     expect(xml).toContain("<itunes:duration>62</itunes:duration>");
     expect(xml).toContain(
@@ -89,6 +92,50 @@ describe("buildFeed", () => {
     expect(xml).toContain(
       '<podcast:transcript url="https://waves.test/podcasts/ep2/transcript.vtt" type="text/vtt" language="es-US" rel="captions" />',
     );
-    expect(xml).toContain("<h3>Transcripción</h3><p>Hola.</p><p>Adiós.</p>");
+    expect(xml).toContain(
+      "<h3>Transcripción</h3><p>Este episodio fue creado con voces generadas por inteligencia artificial.</p><p>Hola.</p><p>Adiós.</p>",
+    );
+    expect(xml).toContain("<h3>Transcripción</h3><p>Hola.</p><p>Adiós.</p>"); // ep1, no notice
+  });
+});
+
+describe("buildFeed for directories", () => {
+  it("points covers at the directory routes, versioned by file", () => {
+    expect(xml).toContain(
+      '<itunes:image href="https://waves.test/shows/show1/cover.jpg?v=cover" />',
+    );
+    expect(xml).toContain(
+      "<image><url>https://waves.test/shows/show1/cover.jpg?v=cover</url>",
+    );
+    expect(xml).toContain(
+      '<itunes:image href="https://waves.test/podcasts/ep2/cover.jpg?v=own" />',
+    );
+  });
+
+  it("declares no owner and no lock without an email", () => {
+    expect(xml).not.toContain("<itunes:owner>");
+    expect(xml).not.toContain("<podcast:locked");
+  });
+
+  it("declares the owner and locks the feed with an email", () => {
+    const owned = buildFeed(
+      { ...feed, directoryEmail: "ana@waves.test" },
+      "https://waves.test",
+    );
+    expect(owned).toContain(
+      "<itunes:owner><itunes:name>Ana</itunes:name><itunes:email>ana@waves.test</itunes:email></itunes:owner>",
+    );
+    expect(owned).toContain(
+      '<podcast:locked owner="ana@waves.test">yes</podcast:locked>',
+    );
+  });
+});
+
+describe("voicedText", () => {
+  it("opens with the spoken notice only when the audio has it", () => {
+    expect(voicedText("Hola.", "en-US", true)).toBe(
+      "This episode was created with AI-generated voices.\n\nHola.",
+    );
+    expect(voicedText("Hola.", "en-US", false)).toBe("Hola.");
   });
 });
