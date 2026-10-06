@@ -80,3 +80,7 @@ export const DEFAULT_SHOW_CATEGORY = "Society & Culture";
 // proves the address works by mailing it a code.
 export const EMAIL_MAX_CHARS = 254;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Two-voice conversations (phase 21): "Name: text" per turn.
+export const DIALOGUE_MAX_TURNS = 60;
+export const HOST_NAME_MAX_CHARS = 20;
