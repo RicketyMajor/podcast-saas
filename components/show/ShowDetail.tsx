@@ -10,6 +10,7 @@ import { PillButton } from "@/components/shared/PillButton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { api } from "@/convex/_generated/api";
 
+import { DirectoryPanel } from "./DirectoryPanel";
 import { ShowHeader } from "./ShowHeader";
 
 export function ShowDetail({
@@ -38,6 +39,7 @@ export function ShowDetail({
       <p className="max-w-prose text-lg text-pretty text-foreground/80">
         {show.description}
       </p>
+      {isOwner && show.episodeCount > 0 && <DirectoryPanel showId={show._id} />}
       <section className="flex flex-col gap-5">
         <SectionHeader title="Episodios" />
         {episodes?.length === 0 ? (

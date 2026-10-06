@@ -11,7 +11,6 @@ import {
   Pencil,
   Plus,
   Radio,
-  Rss,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
@@ -35,10 +34,11 @@ import {
 import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
 import { SHOW_CATEGORIES } from "@/convex/lib/limits";
-import { feedPath } from "@/lib/feed/rss";
 import { formatCount } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 import { usePlayerStore } from "@/stores/player-store";
+
+import { CopyFeedButton } from "./CopyFeedButton";
 
 export type ShowDetailData = NonNullable<
   FunctionReturnType<typeof api.shows.getById>
@@ -270,24 +270,5 @@ function AuthorActions({ show }: { show: ShowDetailData }) {
         onConfirm={handleDelete}
       />
     </>
-  );
-}
-
-// Glass: "Reproducir" stays the one ivory action.
-function CopyFeedButton({ showId }: { showId: string }) {
-  async function copy() {
-    const url = `${window.location.origin}${feedPath(showId)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Enlace del feed copiado. Pégalo en tu app de podcasts.");
-    } catch {
-      toast.error(`No pudimos copiarlo. Este es el enlace: ${url}`);
-    }
-  }
-  return (
-    <PillButton tone="glass" onClick={copy}>
-      <Rss aria-hidden />
-      Copiar enlace RSS
-    </PillButton>
   );
 }
