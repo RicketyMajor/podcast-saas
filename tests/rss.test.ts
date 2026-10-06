@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Id } from "../convex/_generated/dataModel";
-import { buildFeed, voicedText, type Feed } from "../lib/feed/rss";
+import { buildFeed, versionOf, voicedText, type Feed } from "../lib/feed/rss";
 import { cdata, escapeXml } from "../lib/feed/xml";
 
 const episode = (
@@ -75,7 +75,7 @@ describe("buildFeed", () => {
       xml.indexOf('<guid isPermaLink="false">ep1</guid>'),
     );
     expect(xml).toContain(
-      '<enclosure url="https://waves.test/podcasts/ep2/audio.mp3?v=audio-ep2" length="1234" type="audio/mpeg" />',
+      '<enclosure url="https://waves.test/podcasts/ep2/audio/audio-ep2.mp3" length="1234" type="audio/mpeg" />',
     );
     expect(xml).toContain("<itunes:duration>62</itunes:duration>");
     expect(xml).toContain(
@@ -102,13 +102,13 @@ describe("buildFeed", () => {
 describe("buildFeed for directories", () => {
   it("points covers at the directory routes, versioned by file", () => {
     expect(xml).toContain(
-      '<itunes:image href="https://waves.test/shows/show1/cover.jpg?v=cover" />',
+      '<itunes:image href="https://waves.test/shows/show1/cover/cover.jpg" />',
     );
     expect(xml).toContain(
-      "<image><url>https://waves.test/shows/show1/cover.jpg?v=cover</url>",
+      "<image><url>https://waves.test/shows/show1/cover/cover.jpg</url>",
     );
     expect(xml).toContain(
-      '<itunes:image href="https://waves.test/podcasts/ep2/cover.jpg?v=own" />',
+      '<itunes:image href="https://waves.test/podcasts/ep2/cover/own.jpg" />',
     );
   });
 
@@ -137,5 +137,16 @@ describe("voicedText", () => {
       "This episode was created with AI-generated voices.\n\nHola.",
     );
     expect(voicedText("Hola.", "en-US", false)).toBe("Hola.");
+  });
+});
+
+describe("versionOf", () => {
+  it("reads the storage id from a directory file name", () => {
+    expect(versionOf("kg2abc.jpg", ".jpg")).toBe("kg2abc");
+    expect(versionOf("kg2abc.mp3", ".mp3")).toBe("kg2abc");
+  });
+  it("rejects the wrong extension", () => {
+    expect(versionOf("kg2abc.png", ".jpg")).toBeNull();
+    expect(versionOf("kg2abc", ".mp3")).toBeNull();
   });
 });

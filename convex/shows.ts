@@ -64,6 +64,7 @@ const showDetail = v.object({
   totalViews: v.number(),
   imageSource: v.union(v.literal("ai"), v.literal("upload")),
   imagePrompt: v.optional(v.string()),
+  imageStorageId: v.id("_storage"), // versions the directory cover URL
 });
 
 export const getById = query({
@@ -84,6 +85,7 @@ export const getById = query({
       totalViews: show.totalViews,
       imageSource: show.imageSource,
       imagePrompt: show.imagePrompt,
+      imageStorageId: show.imageStorageId,
     };
   },
 });

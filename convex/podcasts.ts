@@ -180,6 +180,9 @@ const podcastDetail = v.object({
   views: v.number(),
   imageUrl: v.union(v.string(), v.null()),
   audioUrl: v.union(v.string(), v.null()),
+  // Version the directory URLs (feed): own cover only, null = the show's.
+  audioStorageId: v.id("_storage"),
+  imageStorageId: v.union(v.id("_storage"), v.null()),
 });
 
 export const getById = query({
@@ -216,6 +219,8 @@ export const getById = query({
       views: p.views,
       imageUrl,
       audioUrl,
+      audioStorageId: p.audioStorageId,
+      imageStorageId: p.imageStorageId ?? null,
     };
   },
 });

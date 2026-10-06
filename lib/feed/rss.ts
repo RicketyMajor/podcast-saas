@@ -12,15 +12,20 @@ export const AI_NOTE = "Voz generada con IA en Waves.";
 export const feedPath = (showId: string) => `/shows/${showId}/feed.xml`;
 export const transcriptPath = (podcastId: string, ext: "txt" | "vtt") =>
   `/podcasts/${podcastId}/transcript.${ext}`;
-// Directory-ready files; ?v=<storageId> changes the URL when the file changes
-// (Spotify only re-downloads a new URL; the CDN caches them a day).
+// Directory-ready files, named after their storage id: a new file is a new
+// URL (Spotify only re-downloads a new URL) and the path still ends in its
+// extension (Apple). The routes serve only the current version.
 export const coverPath = (
   kind: "shows" | "podcasts",
   id: string,
   version: string,
-) => `/${kind}/${id}/cover.jpg?v=${version}`;
+) => `/${kind}/${id}/cover/${version}.jpg`;
 export const audioPath = (podcastId: string, version: string) =>
-  `/podcasts/${podcastId}/audio.mp3?v=${version}`;
+  `/podcasts/${podcastId}/audio/${version}.mp3`;
+
+/** "<storageId>.jpg" → "<storageId>"; null if the extension is wrong. */
+export const versionOf = (file: string, ext: ".jpg" | ".mp3") =>
+  file.endsWith(ext) ? file.slice(0, -ext.length) : null;
 
 /** What the audio says: the spoken AI notice first, when it has one. */
 export function voicedText(
