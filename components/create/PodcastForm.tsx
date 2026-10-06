@@ -7,7 +7,7 @@ import { ConvexError } from "convex/values";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ import {
   currentStage,
   type Stage,
 } from "@/components/create/CreateStages";
+import { HostFields } from "@/components/create/HostFields";
 import { ScriptDialog } from "@/components/create/ScriptDialog";
 import type { PodcastDetailData } from "@/components/podcast/PodcastDetailHeader";
 import { VoiceSelect } from "@/components/create/VoiceSelect";
@@ -39,8 +40,10 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -60,10 +63,12 @@ import {
   SCRIPT_MAX_CHARS,
   SPEAKING_RATES,
 } from "@/convex/lib/limits";
+import { hostNameError, renameSpeaker, sameName } from "@/convex/lib/dialogue";
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { SPEAKING_RATE_LABELS } from "@/lib/constants";
 import { cn, formatCount } from "@/lib/utils";
 import {
+  conversationIssues,
   hostsOf,
   podcastFormSchema,
   type PodcastFormValues,
@@ -150,6 +155,9 @@ export function PodcastForm({
     control,
     handleSubmit,
     setValue,
+    getValues,
+    getFieldState,
+    trigger,
     formState: { isValid, isSubmitting, isDirty, isSubmitSuccessful },
   } = useForm<PodcastFormValues>({
     resolver: zodResolver(podcastFormSchema),
@@ -222,6 +230,38 @@ export function PodcastForm({
   // The cover you make (or the show's) lights the room, like a playing one would.
   usePageCover(image?.url ?? show?.imageUrl);
 
+  const conversation = format === "conversation";
+  const conversationReady =
+    conversationIssues({ format, script, voiceName, voice2Name, hostNames })
+      .length === 0;
+
+  // Conversation rules span fields: recheck the ones already showing errors,
+  // and voice 2 always (a select has no half-typed state to wait out).
+  function revalidateConversation() {
+    const shown = (
+      ["hostNames.0", "hostNames.1", "voice2Name", "script"] as const
+    ).filter((name) => name === "voice2Name" || getFieldState(name).isTouched);
+    if (shown.length > 0) void trigger(shown);
+  }
+
+  // A renamed host keeps its lines: "Charon:" becomes "Martín:" in the
+  // script. Renames start from the last usable name, so passing through an
+  // empty or repeated one on the way doesn't strand the old labels.
+  // A copy: the published audio's source keeps the original names.
+  const labelNames = useRef<[string, string]>([...defaults.hostNames]);
+  function renameHost(index: 0 | 1, to: string) {
+    setValue(`hostNames.${index}`, to, { shouldDirty: true });
+    const other = getValues(`hostNames.${index === 0 ? 1 : 0}`);
+    if (hostNameError(to) || sameName(to, other)) return;
+    const from = labelNames.current[index];
+    labelNames.current[index] = to;
+    const current = getValues("script");
+    const renamed = renameSpeaker(current, from, to);
+    if (renamed !== current) {
+      setValue("script", renamed, { shouldDirty: true });
+    }
+  }
+
   const { shape } = podcastFormSchema;
   const stages: Stage[] = [
     {
@@ -231,7 +271,8 @@ export function PodcastForm({
         show !== undefined &&
         shape.title.safeParse(title).success &&
         shape.description.safeParse(description).success &&
-        shape.script.safeParse(script).success
+        shape.script.safeParse(script).success &&
+        conversationReady
           ? "done"
           : "todo",
     },
@@ -447,6 +488,60 @@ export function PodcastForm({
 
         <FieldSet className={FIELDSET}>
           <FieldLegend className={LEGEND}>Guion</FieldLegend>
+          <Controller
+            name="format"
+            control={control}
+            render={({ field }) => (
+              <FieldSet className={FIELDSET}>
+                <FieldLegend variant="label">Formato</FieldLegend>
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    revalidateConversation();
+                  }}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  {(
+                    [
+                      ["narration", "Narración", "Una voz lee el guion."],
+                      [
+                        "conversation",
+                        "Conversación",
+                        "Dos voces con nombre se turnan.",
+                      ],
+                    ] as const
+                  ).map(([value, title, help]) => (
+                    <FieldLabel key={value} htmlFor={`format-${value}`}>
+                      <Field orientation="horizontal">
+                        <FieldContent>
+                          <FieldTitle>{title}</FieldTitle>
+                          <FieldDescription>{help}</FieldDescription>
+                        </FieldContent>
+                        <RadioGroupItem value={value} id={`format-${value}`} />
+                      </Field>
+                    </FieldLabel>
+                  ))}
+                </RadioGroup>
+              </FieldSet>
+            )}
+          />
+          {conversation && (
+            // Hosts sit further apart than a host's own voice and name, and
+            // arrive with a short rise so the new fields don't just pop in.
+            <div className="flex animate-in flex-col gap-8 duration-300 ease-out-expo fade-in-0 motion-safe:slide-in-from-bottom-2 sm:gap-5">
+              {([0, 1] as const).map((index) => (
+                <HostFields
+                  key={index}
+                  control={control}
+                  index={index}
+                  languageCode={languageCode}
+                  onRename={renameHost}
+                  onChange={revalidateConversation}
+                />
+              ))}
+            </div>
+          )}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Escríbelo tú o pide un borrador a la IA.
@@ -470,25 +565,47 @@ export function PodcastForm({
               return (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="script">
-                    Texto que leerá la voz
+                    {conversation
+                      ? "Texto que leerán las voces"
+                      : "Texto que leerá la voz"}
                   </FieldLabel>
                   <Textarea
                     {...field}
                     id="script"
                     rows={12}
                     aria-invalid={fieldState.invalid}
-                    aria-describedby="script-count"
+                    aria-describedby={
+                      conversation ? "script-help script-count" : "script-count"
+                    }
+                    // The format, shown with the hosts' own names.
+                    placeholder={
+                      conversation
+                        ? `${hostNames[0]}: Hola, ${hostNames[1]}. ¿De qué hablamos hoy?\n${hostNames[1]}: Del tueste del café, ${hostNames[0]}.`
+                        : undefined
+                    }
                     className="min-h-64"
                   />
-                  <FieldDescription
-                    id="script-count"
-                    className={cn(
-                      "text-right tabular-nums",
-                      length > SCRIPT_MAX_CHARS && "text-destructive",
+                  <div className="flex items-start gap-4">
+                    {conversation && (
+                      <FieldDescription
+                        id="script-help"
+                        // Side by side with the counter, not stacked above it.
+                        className="nth-last-2:mt-0"
+                      >
+                        Cada intervención empieza con «Nombre:». Las líneas sin
+                        nombre siguen con la misma voz.
+                      </FieldDescription>
                     )}
-                  >
-                    {formatCount(length)} / {formatCount(SCRIPT_MAX_CHARS)}
-                  </FieldDescription>
+                    <FieldDescription
+                      id="script-count"
+                      className={cn(
+                        "ml-auto shrink-0 text-right tabular-nums",
+                        length > SCRIPT_MAX_CHARS && "text-destructive",
+                      )}
+                    >
+                      {formatCount(length)} / {formatCount(SCRIPT_MAX_CHARS)}
+                    </FieldDescription>
+                  </div>
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               );
@@ -506,25 +623,35 @@ export function PodcastForm({
         <FieldSet className={FIELDSET}>
           <FieldLegend className={LEGEND}>Voz y audio</FieldLegend>
           <FieldGroup>
-            <div className="grid gap-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <Controller
-                name="voiceName"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="voiceName">Voz</FieldLabel>
-                    <VoiceSelect
-                      id="voiceName"
-                      value={field.value}
-                      languageCode={languageCode}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      invalid={fieldState.invalid}
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
+            <div
+              className={cn(
+                "grid gap-5",
+                conversation
+                  ? "sm:grid-cols-2"
+                  : "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]",
+              )}
+            >
+              {/* In a conversation, voice 1 lives with its name in Guion. */}
+              {!conversation && (
+                <Controller
+                  name="voiceName"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="voiceName">Voz</FieldLabel>
+                      <VoiceSelect
+                        id="voiceName"
+                        value={field.value}
+                        languageCode={languageCode}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+              )}
               <Controller
                 name="speakingRate"
                 control={control}
