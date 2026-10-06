@@ -50,7 +50,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { DEFAULT_VOICE_NAME, LANGUAGES } from "@/convex/ai/voices";
+import {
+  DEFAULT_VOICE_NAME,
+  LANGUAGES,
+  secondVoiceFor,
+} from "@/convex/ai/voices";
 import {
   DEFAULT_SPEAKING_RATE,
   SCRIPT_MAX_CHARS,
@@ -60,6 +64,7 @@ import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { SPEAKING_RATE_LABELS } from "@/lib/constants";
 import { cn, formatCount } from "@/lib/utils";
 import {
+  hostsOf,
   podcastFormSchema,
   type PodcastFormValues,
 } from "@/lib/validations/podcast";
@@ -104,6 +109,18 @@ export function PodcastForm({
         defaultShowId ??
         (shows.length === 1 ? shows[0]?._id : undefined)),
   );
+  const [host1, host2] = podcast?.hosts ?? [];
+  const voice1 = podcast?.voiceName ?? DEFAULT_VOICE_NAME;
+  const voice2 = host2?.voiceName ?? secondVoiceFor(voice1);
+  const hostDefaults: Pick<
+    PodcastFormValues,
+    "format" | "voice2Name" | "hostNames"
+  > = {
+    format: host1 && host2 ? "conversation" : "narration",
+    voice2Name: voice2 as PodcastFormValues["voice2Name"],
+    // Until the creator names them, hosts go by their voice's name.
+    hostNames: [host1?.name ?? voice1, host2?.name ?? voice2],
+  };
   // Stored values passed validation on publish, so the casts hold.
   const defaults: PodcastFormValues = podcast
     ? {
@@ -115,6 +132,7 @@ export function PodcastForm({
         speakingRate: String(podcast.speakingRate),
         script: podcast.transcript,
         spokenDisclosure: podcast.spokenDisclosure,
+        ...hostDefaults,
       }
     : {
         showId: initialShow?._id ?? "",
@@ -126,6 +144,7 @@ export function PodcastForm({
         speakingRate: String(DEFAULT_SPEAKING_RATE),
         script: "",
         spokenDisclosure: true,
+        ...hostDefaults,
       };
   const {
     control,
@@ -167,6 +186,9 @@ export function PodcastForm({
     voiceName,
     speakingRate,
     spokenDisclosure,
+    format,
+    voice2Name,
+    hostNames,
   ] = useWatch({
     control,
     name: [
@@ -178,6 +200,9 @@ export function PodcastForm({
       "voiceName",
       "speakingRate",
       "spokenDisclosure",
+      "format",
+      "voice2Name",
+      "hostNames",
     ],
   });
   const show = shows.find((s) => s._id === showId);
@@ -189,6 +214,9 @@ export function PodcastForm({
       voiceName,
       speakingRate,
       spokenDisclosure,
+      format,
+      voice2Name,
+      hostNames,
     });
   const canPublish = isValid && audioReady;
   // The cover you make (or the show's) lights the room, like a playing one would.
@@ -247,6 +275,7 @@ export function PodcastForm({
       voiceName: values.voiceName,
       speakingRate: Number(values.speakingRate),
       imagePrompt: image?.prompt,
+      hosts: hostsOf(values),
     };
     try {
       if (podcast) {

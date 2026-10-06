@@ -60,3 +60,11 @@ export function voiceNameOf(id: string): string {
 }
 
 export const DEFAULT_VOICE_NAME = "Charon";
+// A conversation's second voice by default (phase 21).
+export const DEFAULT_SECOND_VOICE_NAME = "Aoede";
+
+/** Voice 2's default for a given voice 1: never the same voice. */
+export const secondVoiceFor = (first: string) =>
+  first === DEFAULT_SECOND_VOICE_NAME
+    ? DEFAULT_VOICE_NAME
+    : DEFAULT_SECOND_VOICE_NAME;

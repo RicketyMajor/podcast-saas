@@ -16,13 +16,22 @@ import { SCRIPT_MAX_CHARS, SCRIPT_MIN_CHARS } from "@/convex/lib/limits";
 import { formatCount, formatDuration } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player-store";
 import {
+  conversationIssues,
+  hostsOf,
   podcastFormSchema,
   type PodcastFormValues,
 } from "@/lib/validations/podcast";
 
 export type AudioSource = Pick<
   PodcastFormValues,
-  "script" | "languageCode" | "voiceName" | "speakingRate" | "spokenDisclosure"
+  | "script"
+  | "languageCode"
+  | "voiceName"
+  | "speakingRate"
+  | "spokenDisclosure"
+  | "format"
+  | "voice2Name"
+  | "hostNames"
 >;
 
 export type GeneratedAudio = {
@@ -44,7 +53,13 @@ export function sameSource(a: AudioSource, b: AudioSource) {
     a.languageCode === b.languageCode &&
     a.voiceName === b.voiceName &&
     a.speakingRate === b.speakingRate &&
-    a.spokenDisclosure === b.spokenDisclosure
+    a.spokenDisclosure === b.spokenDisclosure &&
+    a.format === b.format &&
+    // Voice 2 and the names only exist in a conversation.
+    (a.format === "narration" ||
+      (a.voice2Name === b.voice2Name &&
+        a.hostNames[0].trim() === b.hostNames[0].trim() &&
+        a.hostNames[1].trim() === b.hostNames[1].trim()))
   );
 }
 
@@ -64,26 +79,42 @@ export function GeneratePodcast({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [script, languageCode, voiceName, speakingRate, spokenDisclosure] =
-    useWatch({
-      control,
-      name: [
-        "script",
-        "languageCode",
-        "voiceName",
-        "speakingRate",
-        "spokenDisclosure",
-      ],
-    });
+  const [
+    script,
+    languageCode,
+    voiceName,
+    speakingRate,
+    spokenDisclosure,
+    format,
+    voice2Name,
+    hostNames,
+  ] = useWatch({
+    control,
+    name: [
+      "script",
+      "languageCode",
+      "voiceName",
+      "speakingRate",
+      "spokenDisclosure",
+      "format",
+      "voice2Name",
+      "hostNames",
+    ],
+  });
   const source: AudioSource = {
     script,
     languageCode,
     voiceName,
     speakingRate,
     spokenDisclosure,
+    format,
+    voice2Name,
+    hostNames,
   };
+  const scriptReady = podcastFormSchema.shape.script.safeParse(script).success;
   const canGenerate =
-    podcastFormSchema.shape.script.safeParse(script).success &&
+    scriptReady &&
+    conversationIssues(source).length === 0 &&
     podcastFormSchema.shape.voiceName.safeParse(voiceName).success;
   const stale = audio !== null && !sameSource(audio.source, source);
 
@@ -97,6 +128,7 @@ export function GeneratePodcast({
         voiceName,
         speakingRate: Number(speakingRate),
         spokenDisclosure,
+        hosts: hostsOf(source),
       });
       onAudioChange({ ...result, source });
       toast.success("Audio generado.");
@@ -138,8 +170,9 @@ export function GeneratePodcast({
             <AudioLines aria-hidden className="size-5" />
           </span>
           <p className="text-sm text-pretty text-muted-foreground">
-            Convertiremos tu guion en voz con el idioma, la voz y la velocidad
-            que elegiste.
+            Convertiremos tu guion en voz con el idioma,{" "}
+            {format === "conversation" ? "las dos voces" : "la voz"} y la
+            velocidad que elegiste.
           </p>
         </div>
       )}
@@ -179,8 +212,10 @@ export function GeneratePodcast({
         </Button>
         {!pending && (
           <p className="text-sm text-muted-foreground">
-            {!canGenerate ? (
+            {!scriptReady ? (
               `Escribe un guion de ${formatCount(SCRIPT_MIN_CHARS)} a ${formatCount(SCRIPT_MAX_CHARS)} caracteres para generar el audio.`
+            ) : !canGenerate ? (
+              "Revisa las voces, los nombres y el guion de la conversación."
             ) : (
               <QuotaNote kind="audio" />
             )}

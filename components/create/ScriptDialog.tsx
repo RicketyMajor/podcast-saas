@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
+import { hostNamesError } from "@/convex/lib/dialogue";
 import {
   SCRIPT_MINUTES,
   SCRIPT_TONES,
@@ -63,10 +64,13 @@ export function ScriptDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [languageCode, currentScript] = useWatch({
+  const [languageCode, currentScript, format, hostNames] = useWatch({
     control,
-    name: ["languageCode", "script"],
+    name: ["languageCode", "script", "format", "hostNames"],
   });
+  const hosts =
+    format === "conversation" ? hostNames.map((n) => n.trim()) : undefined;
+  const hostsError = hosts ? hostNamesError(hosts) : null;
   const language = LANGUAGES.find((l) => l.code === languageCode);
   const replacing = currentScript.trim().length > 0;
 
@@ -83,7 +87,7 @@ export function ScriptDialog({
     // React bubbles events through portals: keep this submit away from PodcastForm.
     event.stopPropagation();
     setTouched(true);
-    if (topicError) return;
+    if (topicError || hostsError) return;
     setPending(true);
     setError(null);
     try {
@@ -92,6 +96,7 @@ export function ScriptDialog({
         languageCode,
         minutes: Number(minutes),
         tone,
+        hosts,
       });
       onGenerated(script);
       setOpen(false);
@@ -129,8 +134,10 @@ export function ScriptDialog({
           <DialogHeader>
             <DialogTitle>Generar guion con IA</DialogTitle>
             <DialogDescription>
-              Se escribirá en {language?.label ?? "el idioma elegido"}. Podrás
-              editarlo antes de generar el audio.
+              {hosts
+                ? `Una conversación entre ${hosts[0]} y ${hosts[1]}, en ${language?.label ?? "el idioma elegido"}.`
+                : `Se escribirá en ${language?.label ?? "el idioma elegido"}.`}{" "}
+              Podrás editarlo antes de generar el audio.
             </DialogDescription>
           </DialogHeader>
 
@@ -187,6 +194,12 @@ export function ScriptDialog({
             )}
           </FieldGroup>
 
+          {hostsError && (
+            <p role="alert" className="text-sm text-destructive">
+              Revisa los nombres de las voces: {hostsError}
+            </p>
+          )}
+
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
@@ -214,7 +227,7 @@ export function ScriptDialog({
             <Button
               type="submit"
               className="h-11 rounded-full px-5 transition-transform active:scale-95"
-              disabled={pending}
+              disabled={pending || hostsError !== null}
             >
               {pending && <Loader2 aria-hidden className="animate-spin" />}
               {pending
