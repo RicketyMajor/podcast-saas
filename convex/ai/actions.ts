@@ -16,8 +16,10 @@ import {
   SCRIPT_TOPIC_MIN_CHARS,
   SPEAKING_RATES,
 } from "../lib/limits";
+import type { Turn } from "../lib/dialogue";
 import { tidyScript } from "../lib/text";
-import { chunkScript, concatPcm, encodeMp3 } from "./audio";
+import { checkDialogue, hostInput } from "../lib/validation";
+import { chunkScript, concatPcm, encodeMp3, mapLimit } from "./audio";
 import {
   AUDIO_OUTPUT,
   CLOUDFLARE_IMAGE,
@@ -73,6 +75,8 @@ export const generateAudio = action({
     speakingRate: v.number(),
     // Optional so a tab still running the previous client keeps working.
     spokenDisclosure: v.optional(v.boolean()),
+    // Two named hosts = a conversation (phase 21); absent = narration.
+    hosts: v.optional(v.array(hostInput)),
   },
   returns: v.object({
     storageId: v.id("_storage"),
@@ -98,11 +102,16 @@ export const generateAudio = action({
     if (!(SPEAKING_RATES as readonly number[]).includes(args.speakingRate)) {
       throw invalid("Velocidad no disponible.");
     }
+    const dialogue = checkDialogue(script, args.voiceName, args.hosts);
+    // What gets voiced, in order: the whole script, or one turn per host
+    // line. Names are labels: never voiced, never billed.
+    const segments: Turn[] = dialogue?.turns ?? [{ speaker: 0, text: script }];
 
     const apiKey = requireEnv("GOOGLE_TTS_API_KEY", "audio");
     // Not part of the script's 5,000-char limit, but voiced and billed.
     const notice = args.spokenDisclosure ? disclosureOf(args.languageCode) : "";
-    const spokenChars = script.length + notice.length;
+    const spokenChars =
+      notice.length + segments.reduce((sum, s) => sum + s.text.length, 0);
 
     const generationId = await ctx.runMutation(
       internal.ai.generations.reserveGeneration,
@@ -119,32 +128,45 @@ export const generateAudio = action({
 
     try {
       const tts = googleTts(apiKey);
-      // Parallel: Promise.all keeps part order; every part uses the same voice
-      // and pace. ponytail: ~4 concurrent requests (limit: 200/min); cap the
-      // fan-out if SCRIPT_MAX_CHARS grows.
       const chunkBytes = Math.min(
         GOOGLE_TTS.chunkBytes,
         tts.maxBytesPerRequest,
       );
-      const parts = await Promise.all(
-        // The notice is its own first part: same voice, then the usual gap.
-        [...(notice ? [notice] : []), ...chunkScript(script, chunkBytes)].map(
-          async (text) => {
-            const pcm = await tts.synthesize({
-              text,
-              voiceId: voiceId(args.languageCode, args.voiceName),
-              languageCode: args.languageCode,
-              speakingRate: args.speakingRate,
-            });
-            return pcm.samples;
-          },
+      const voiceOf = (speaker: Turn["speaker"]) =>
+        voiceId(
+          args.languageCode,
+          dialogue?.hosts[speaker].voiceName ?? args.voiceName,
+        );
+      const parts = [
+        // The notice opens the audio in the first voice, then the usual gap.
+        ...(notice ? [{ text: notice, voiceId: voiceOf(0) }] : []),
+        ...segments.flatMap((s) =>
+          chunkScript(s.text, chunkBytes).map((text) => ({
+            text,
+            voiceId: voiceOf(s.speaker),
+          })),
         ),
+      ];
+      const started = Date.now();
+      // Same pace for every part; at most maxConcurrent requests at once.
+      const pcm = await mapLimit(
+        parts,
+        GOOGLE_TTS.maxConcurrent,
+        async (part) => {
+          const { samples } = await tts.synthesize({
+            ...part,
+            languageCode: args.languageCode,
+            speakingRate: args.speakingRate,
+          });
+          return samples;
+        },
       );
+      const synthSec = (Date.now() - started) / 1000;
 
       const gapSamples = Math.round(
         (GOOGLE_TTS.sampleRate * AUDIO_OUTPUT.gapMs) / 1000,
       );
-      const samples = concatPcm(parts, gapSamples);
+      const samples = concatPcm(pcm, gapSamples);
       const mp3 = encodeMp3(
         samples,
         GOOGLE_TTS.sampleRate,
@@ -163,7 +185,7 @@ export const generateAudio = action({
         outcome: { status: "success", storageId, outputSeconds: durationSec },
       });
       console.log(
-        `audio ok: ${spokenChars} chars${notice ? " (with notice)" : ""}, ${parts.length} parts, ${durationSec.toFixed(1)} s, ${mp3.length} bytes`,
+        `audio ok: ${spokenChars} chars${notice ? " (with notice)" : ""}${dialogue ? `, ${dialogue.turns.length} turns` : ""}, ${parts.length} parts in ${synthSec.toFixed(1)} s, ${durationSec.toFixed(1)} s of audio, ${mp3.length} bytes`,
       );
       return { storageId, url, durationSec };
     } catch (error) {

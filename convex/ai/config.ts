@@ -12,6 +12,9 @@ export const GOOGLE_TTS = {
   // Latency grows with input length (~35 s per 2,000 chars), so scripts are cut
   // in smaller parts synthesized in parallel: 5,000 chars ≈ 4 parts.
   chunkBytes: 1_500,
+  // Requests in flight at once: Chirp 3 HD allows 200/min, and a two-voice
+  // conversation can have ~60 turns (phase 21).
+  maxConcurrent: 6,
   sampleRate: 24_000,
   // List price after the 1M chars/month free tier (verified 2026-09-29).
   usdPerChar: 30 / 1_000_000,

@@ -86,3 +86,32 @@ export function encodeMp3(
   }
   return out;
 }
+
+/**
+ * Promise.all with at most `limit` calls in flight; results keep the input
+ * order. After a failure no new call starts and the first error is thrown.
+ */
+export async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  let failed = false;
+  async function worker() {
+    while (!failed && next < items.length) {
+      const i = next++;
+      try {
+        results[i] = await fn(items[i] as T);
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+  return results;
+}

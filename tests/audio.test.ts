@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { chunkScript, concatPcm, encodeMp3 } from "../convex/ai/audio";
+import {
+  chunkScript,
+  concatPcm,
+  encodeMp3,
+  mapLimit,
+} from "../convex/ai/audio";
 
 const bytes = (text: string) => new TextEncoder().encode(text).length;
 const words = (text: string) => text.split(/\s+/).join(" ");
@@ -68,5 +73,42 @@ describe("encodeMp3", () => {
     // 64 kbps ≈ 8,000 bytes/s, plus encoder padding.
     expect(mp3.length).toBeGreaterThan(7_000);
     expect(mp3.length).toBeLessThan(10_000);
+  });
+});
+
+describe("mapLimit", () => {
+  const wait = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("keeps input order and never runs more than `limit` at once", async () => {
+    let active = 0;
+    let peak = 0;
+    const out = await mapLimit([30, 5, 20, 1, 10, 2, 8], 3, async (ms) => {
+      active++;
+      peak = Math.max(peak, active);
+      await wait(ms);
+      active--;
+      return ms * 2;
+    });
+    expect(out).toEqual([60, 10, 40, 2, 20, 4, 16]);
+    expect(peak).toBe(3);
+  });
+
+  it("starts nothing new after a failure", async () => {
+    const started: number[] = [];
+    await expect(
+      mapLimit([1, 2, 3, 4, 5], 2, async (n) => {
+        started.push(n);
+        await wait(5);
+        if (n === 1) throw new Error("boom");
+        return n;
+      }),
+    ).rejects.toThrow("boom");
+    await wait(20);
+    expect(started).toEqual([1, 2]);
+  });
+
+  it("handles an empty list", async () => {
+    expect(await mapLimit([], 6, async () => 1)).toEqual([]);
   });
 });
