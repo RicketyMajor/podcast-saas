@@ -101,10 +101,7 @@ export function geminiText(apiKey: string): TextProvider {
         `Duración: ${targetMinutes} min (unas ${words} palabras${hosts ? " en total" : ""}).`,
         `Tono: ${tone}.`,
         ...(hosts
-          ? [
-              `Anfitrión A: """${hosts[0]}"""`,
-              `Anfitrión B: """${hosts[1]}"""`,
-            ]
+          ? [`Anfitrión A: """${hosts[0]}"""`, `Anfitrión B: """${hosts[1]}"""`]
           : []),
         `Tema: """${topic}"""`,
       ].join("\n");

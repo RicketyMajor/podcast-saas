@@ -54,10 +54,7 @@ describe("parseDialogue", () => {
   });
 
   it("drops a label with nothing said", () => {
-    const result = parseDialogue(
-      "Martín:\nLucía: Hola.\nMartín: Chao.",
-      NAMES,
-    );
+    const result = parseDialogue("Martín:\nLucía: Hola.\nMartín: Chao.", NAMES);
     expect(result.ok && result.turns.length).toBe(2);
   });
 
@@ -120,9 +117,7 @@ describe("host names", () => {
   });
   it("needs exactly two different names", () => {
     expect(hostNamesError(["Ana", "Luis"])).toBeNull();
-    expect(hostNamesError(["Ana", " ana "])).toBe(
-      "Usa dos nombres distintos.",
-    );
+    expect(hostNamesError(["Ana", " ana "])).toBe("Usa dos nombres distintos.");
     expect(hostNamesError(["Ana"])).toBe(
       "Una conversación lleva exactamente dos voces.",
     );
@@ -214,8 +209,8 @@ describe("checkDialogue", () => {
     expect(message(() => checkDialogue(SCRIPT, "Puck", hosts))).toBe(
       "La voz 1 no coincide con la voz del episodio.",
     );
-    expect(
-      message(() => checkDialogue("Hola a todos.", "Charon", hosts)),
-    ).toBe("El guion debe empezar con el nombre de una voz.");
+    expect(message(() => checkDialogue("Hola a todos.", "Charon", hosts))).toBe(
+      "El guion debe empezar con el nombre de una voz.",
+    );
   });
 });

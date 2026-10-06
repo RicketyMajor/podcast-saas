@@ -1,11 +1,7 @@
 import { z } from "zod";
 
 import { LANGUAGES, VOICES } from "@/convex/ai/voices";
-import {
-  hostNameError,
-  parseDialogue,
-  sameName,
-} from "@/convex/lib/dialogue";
+import { hostNameError, parseDialogue, sameName } from "@/convex/lib/dialogue";
 import {
   COVER_TYPES,
   DESCRIPTION_MAX_CHARS,
@@ -78,7 +74,10 @@ export function conversationIssues(values: ConversationFields) {
     });
   }
   if (values.voiceName === values.voice2Name) {
-    issues.push({ path: ["voice2Name"], message: "Elige dos voces distintas." });
+    issues.push({
+      path: ["voice2Name"],
+      message: "Elige dos voces distintas.",
+    });
   }
   // The script is only checked against usable names.
   if (issues.every((issue) => issue.path[0] !== "hostNames")) {

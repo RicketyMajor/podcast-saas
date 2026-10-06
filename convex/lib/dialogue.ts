@@ -5,8 +5,7 @@ import { DIALOGUE_MAX_TURNS, HOST_NAME_MAX_CHARS } from "./limits";
 export type Speaker = 0 | 1;
 export type Turn = { speaker: Speaker; text: string };
 export type Dialogue =
-  | { ok: true; turns: Turn[] }
-  | { ok: false; error: string };
+  { ok: true; turns: Turn[] } | { ok: false; error: string };
 
 const START_ERROR = "El guion debe empezar con el nombre de una voz.";
 // A letter first, then letters (accents included), spaces, ' or -.
