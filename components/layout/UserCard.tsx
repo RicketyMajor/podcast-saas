@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { ChevronRight, UserPlus } from "lucide-react";
+import { Settings, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,18 +33,30 @@ export function UserCard() {
     );
   }
 
+  // Two sibling links (links can't nest): the profile and its settings.
   return (
-    <Link
-      href={`/profile/${me._id}`}
-      className="flex items-center gap-3 rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/8 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-    >
-      <Avatar className="size-10">
-        {me.avatarUrl && <AvatarImage src={me.avatarUrl} alt="" />}
-        <AvatarFallback>{me.name.charAt(0).toUpperCase()}</AvatarFallback>
-      </Avatar>
-      <span className="min-w-0 flex-1 truncate font-semibold">{me.name}</span>
-      <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
-      <span className="sr-only">Ver mi perfil</span>
-    </Link>
+    <div className="flex items-center gap-1 rounded-2xl bg-card/60 p-1.5 ring-1 ring-foreground/8">
+      <Link
+        href={`/profile/${me._id}`}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+      >
+        <Avatar className="size-10">
+          {me.avatarUrl && <AvatarImage src={me.avatarUrl} alt="" />}
+          <AvatarFallback>{me.name.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <span className="min-w-0 flex-1 truncate font-semibold">{me.name}</span>
+        <span className="sr-only">Ver mi perfil</span>
+      </Link>
+      <Button
+        asChild
+        variant="ghost"
+        size="icon"
+        className="size-11 shrink-0 rounded-xl text-muted-foreground hover:text-foreground"
+      >
+        <Link href="/settings" aria-label="Ajustes" title="Ajustes">
+          <Settings aria-hidden className="size-5" />
+        </Link>
+      </Button>
+    </div>
   );
 }

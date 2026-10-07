@@ -1,7 +1,13 @@
 "use client";
 
 import type { FunctionReturnType } from "convex/server";
-import { Headphones, Mic, Shuffle } from "lucide-react";
+import {
+  Headphones,
+  Link as LinkIcon,
+  Mic,
+  Pencil,
+  Shuffle,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -79,6 +85,26 @@ export function ProfileHeader({
           <h1 className="max-w-full font-display text-[clamp(2rem,4.4vw,3.5rem)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance break-words">
             {profile.name}
           </h1>
+          {profile.bio && (
+            <p className="max-w-prose text-pretty text-foreground/80">
+              {profile.bio}
+            </p>
+          )}
+          {profile.website && (
+            <a
+              href={profile.website}
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="-my-2 inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full text-sm font-medium text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <LinkIcon aria-hidden className="size-4 shrink-0" />
+              {/* updateProfile only stores URLs that websiteError accepts. */}
+              <span className="truncate">
+                {new URL(profile.website).host.replace(/^www\./, "")}
+              </span>
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </a>
+          )}
           <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-foreground/80">
             <li className="flex items-center gap-1.5">
               <Mic aria-hidden className="size-4" />
@@ -96,7 +122,7 @@ export function ProfileHeader({
             </li>
           </ul>
           {(profile.podcastCount > 0 || isOwner) && (
-            <div className="flex flex-wrap justify-center gap-3 pt-1">
+            <div className="flex flex-wrap justify-center gap-3 pt-1 sm:justify-start">
               {profile.podcastCount > 0 && (
                 <PillButton
                   disabled={playable.length === 0}
@@ -111,6 +137,14 @@ export function ProfileHeader({
                   <Link href="/create-podcast">
                     <Mic aria-hidden />
                     Crear podcast
+                  </Link>
+                </PillButton>
+              )}
+              {isOwner && (
+                <PillButton asChild tone="glass">
+                  <Link href="/settings">
+                    <Pencil aria-hidden />
+                    Editar perfil
                   </Link>
                 </PillButton>
               )}
