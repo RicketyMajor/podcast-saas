@@ -28,6 +28,8 @@ export const metadata: Metadata = {
   ),
   title: { default: "Waves", template: "%s · Waves" },
   description: "Crea, publica y escucha podcasts generados con IA.",
+  applicationName: "Waves",
+  openGraph: { siteName: "Waves" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

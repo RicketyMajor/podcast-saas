@@ -26,6 +26,7 @@ export async function generateMetadata({
     description,
     openGraph: {
       type: "music.song",
+      siteName: "Waves",
       title: podcast.title,
       description,
       images,
