@@ -69,7 +69,7 @@ export function ProfileHeader({
 
       <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-end sm:gap-8 sm:text-left">
         <Avatar className="size-36 shadow-2xl ring-1 shadow-black/60 ring-foreground/10 sm:size-44 lg:size-52">
-          {profile.image && <AvatarImage src={profile.image} alt="" />}
+          {profile.avatarUrl && <AvatarImage src={profile.avatarUrl} alt="" />}
           <AvatarFallback className="text-6xl font-semibold">
             {profile.name.charAt(0).toUpperCase()}
           </AvatarFallback>

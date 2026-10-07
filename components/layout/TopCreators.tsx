@@ -37,7 +37,9 @@ export function TopCreators() {
                 className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <Avatar className="size-9">
-                  {creator.image && <AvatarImage src={creator.image} alt="" />}
+                  {creator.avatarUrl && (
+                    <AvatarImage src={creator.avatarUrl} alt="" />
+                  )}
                   <AvatarFallback>
                     {creator.name.charAt(0).toUpperCase()}
                   </AvatarFallback>

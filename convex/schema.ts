@@ -16,10 +16,17 @@ export default defineSchema({
     // Denormalized counters; optional because Convex Auth inserts the user.
     podcastCount: v.optional(v.number()),
     totalViews: v.optional(v.number()),
+    // Profile (phase 22): our own fields, because Convex Auth overwrites
+    // name and image with Google's on every sign-in.
+    displayName: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id("_storage")),
+    bio: v.optional(v.string()),
+    website: v.optional(v.string()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
-    .index("by_podcast_count", ["podcastCount"]),
+    .index("by_podcast_count", ["podcastCount"])
+    .index("by_avatar", ["avatarStorageId"]), // a photo belongs to one user
 
   // A program that groups episodes; one RSS feed per show (phase 19).
   shows: defineTable({
@@ -49,7 +56,9 @@ export default defineSchema({
     showId: v.id("shows"), // every episode belongs to a show (ADR-029)
     authorId: v.id("users"),
     authorName: v.string(),
-    authorImageUrl: v.string(),
+    // Unused since phase 22 (avatars resolve from the author); emptied by
+    // podcasts.clearAuthorImageUrl and dropped in phase 23.
+    authorImageUrl: v.optional(v.string()),
     title: v.string(),
     description: v.string(),
     transcript: v.string(),

@@ -33,17 +33,16 @@ export function UserCard() {
     );
   }
 
-  const name = me.name?.trim() || "Anónimo";
   return (
     <Link
       href={`/profile/${me._id}`}
       className="flex items-center gap-3 rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/8 transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Avatar className="size-10">
-        {me.image && <AvatarImage src={me.image} alt="" />}
-        <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+        {me.avatarUrl && <AvatarImage src={me.avatarUrl} alt="" />}
+        <AvatarFallback>{me.name.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
+      <span className="min-w-0 flex-1 truncate font-semibold">{me.name}</span>
       <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
       <span className="sr-only">Ver mi perfil</span>
     </Link>

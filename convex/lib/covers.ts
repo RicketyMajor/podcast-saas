@@ -25,9 +25,9 @@ export function usable(
   );
 }
 
-/** Whether a show or a podcast already uses this file as its cover. */
-export async function coverInUse(ctx: QueryCtx, storageId: Id<"_storage">) {
-  const [show, podcast] = await Promise.all([
+/** Whether a show or podcast cover, or a profile photo, uses this file. */
+export async function fileInUse(ctx: QueryCtx, storageId: Id<"_storage">) {
+  const [show, podcast, user] = await Promise.all([
     ctx.db
       .query("shows")
       .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
@@ -36,8 +36,26 @@ export async function coverInUse(ctx: QueryCtx, storageId: Id<"_storage">) {
       .query("podcasts")
       .withIndex("by_image", (q) => q.eq("imageStorageId", storageId))
       .first(),
+    ctx.db
+      .query("users")
+      .withIndex("by_avatar", (q) => q.eq("avatarStorageId", storageId))
+      .first(),
   ]);
-  return show !== null || podcast !== null;
+  return show !== null || podcast !== null || user !== null;
+}
+
+/** An uploaded image nobody uses yet that passes the form's checks. */
+export async function freshUpload(ctx: QueryCtx, storageId: Id<"_storage">) {
+  const [file, inUse] = await Promise.all([
+    ctx.db.system.get("_storage", storageId),
+    fileInUse(ctx, storageId),
+  ]);
+  return (
+    file !== null &&
+    !inUse &&
+    COVER_TYPES.includes(file.contentType ?? "") &&
+    file.size <= UPLOAD_MAX_MB * 1024 * 1024
+  );
 }
 
 // The client never decides where a cover comes from: either the user's own
@@ -56,18 +74,9 @@ export async function checkCover(
     return { generation, imageSource: "ai" as const };
   }
   // ponytail: an unpublished upload isn't tied to its uploader; someone who
-  // learns its id could publish it first. A published one can't be taken
-  // (by_image), so deleting a podcast or show never deletes another's cover.
-  const [file, inUse] = await Promise.all([
-    ctx.db.system.get("_storage", storageId),
-    coverInUse(ctx, storageId),
-  ]);
-  if (
-    file === null ||
-    inUse ||
-    !COVER_TYPES.includes(file.contentType ?? "") ||
-    file.size > UPLOAD_MAX_MB * 1024 * 1024
-  ) {
+  // learns its id could publish it first. A file in use can't be taken
+  // (fileInUse), so deleting a podcast, show or photo never deletes another's.
+  if (!(await freshUpload(ctx, storageId))) {
     throw invalid("La portada no es válida. Sube una imagen PNG, JPG o WebP.");
   }
   return { generation: null, imageSource: "upload" as const };

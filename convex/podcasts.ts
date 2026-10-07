@@ -9,13 +9,19 @@ import { ConvexError, v } from "convex/values";
 import { components } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
+  internalMutation,
   mutation,
   query,
   type MutationCtx,
   type QueryCtx,
 } from "./_generated/server";
 import { LANGUAGES, VOICES, voiceId, voiceNameOf } from "./ai/voices";
-import { assertOwner, authorNameOf, getCurrentUserOrThrow } from "./lib/auth";
+import {
+  assertOwner,
+  authorNameOf,
+  avatarUrlOf,
+  getCurrentUserOrThrow,
+} from "./lib/auth";
 import {
   checkCover,
   generationOf,
@@ -171,7 +177,7 @@ const podcastDetail = v.object({
   _creationTime: v.number(),
   authorId: v.id("users"),
   authorName: v.string(),
-  authorImageUrl: v.string(),
+  authorImageUrl: v.union(v.string(), v.null()),
   title: v.string(),
   description: v.string(),
   transcript: v.string(),
@@ -202,17 +208,21 @@ export const getById = query({
     const podcastId = ctx.db.normalizeId("podcasts", args.podcastId);
     const p = podcastId && (await ctx.db.get("podcasts", podcastId));
     if (!p) return null;
-    const show = await ctx.db.get("shows", p.showId);
-    const [imageUrl, audioUrl] = await Promise.all([
+    const [show, author] = await Promise.all([
+      ctx.db.get("shows", p.showId),
+      ctx.db.get("users", p.authorId),
+    ]);
+    const [imageUrl, audioUrl, authorImageUrl] = await Promise.all([
       coverUrl(ctx, p, show),
       ctx.storage.getUrl(p.audioStorageId),
+      author ? avatarUrlOf(ctx, author) : null,
     ]);
     return {
       _id: p._id,
       _creationTime: p._creationTime,
       authorId: p.authorId,
       authorName: p.authorName,
-      authorImageUrl: p.authorImageUrl,
+      authorImageUrl,
       title: p.title,
       description: p.description,
       transcript: p.transcript,
@@ -371,7 +381,6 @@ export const create = mutation({
       showId: show._id,
       authorId: user._id,
       authorName,
-      authorImageUrl: user.image ?? "",
       languageCode: args.languageCode,
       voiceProvider: "google",
       voiceId: voiceId(args.languageCode, args.voiceName),
@@ -583,5 +592,27 @@ export const registerView = mutation({
       });
     }
     return null;
+  },
+});
+
+// Phase 22: avatars resolve from the author, so the copied URL is dead
+// weight. Empties it (dry run first) so phase 23 can drop the field.
+// ponytail: one transaction over every podcast (a handful in prod); page with
+// a cursor if this pattern is reused on a big table.
+export const clearAuthorImageUrl = internalMutation({
+  args: { dryRun: v.boolean() },
+  returns: v.number(),
+  handler: async (ctx, { dryRun }) => {
+    let count = 0;
+    for await (const podcast of ctx.db.query("podcasts")) {
+      if (podcast.authorImageUrl === undefined) continue;
+      count++;
+      if (!dryRun) {
+        await ctx.db.patch("podcasts", podcast._id, {
+          authorImageUrl: undefined,
+        });
+      }
+    }
+    return count;
   },
 });

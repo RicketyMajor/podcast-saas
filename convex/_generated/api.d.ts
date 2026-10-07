@@ -26,6 +26,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_covers from "../lib/covers.js";
 import type * as lib_dialogue from "../lib/dialogue.js";
 import type * as lib_limits from "../lib/limits.js";
+import type * as lib_profile from "../lib/profile.js";
 import type * as lib_text from "../lib/text.js";
 import type * as lib_validation from "../lib/validation.js";
 import type * as podcasts from "../podcasts.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   "lib/covers": typeof lib_covers;
   "lib/dialogue": typeof lib_dialogue;
   "lib/limits": typeof lib_limits;
+  "lib/profile": typeof lib_profile;
   "lib/text": typeof lib_text;
   "lib/validation": typeof lib_validation;
   podcasts: typeof podcasts;

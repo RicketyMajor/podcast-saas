@@ -11,6 +11,7 @@ import { LANGUAGES } from "./ai/voices";
 import {
   assertOwner,
   authorNameOf,
+  avatarUrlOf,
   getCurrentUser,
   getCurrentUserOrThrow,
 } from "./lib/auth";
@@ -63,7 +64,7 @@ async function toCard(ctx: QueryCtx, show: Doc<"shows">) {
 
 const showDetail = v.object({
   ...showCard.fields,
-  authorImageUrl: v.string(),
+  authorImageUrl: v.union(v.string(), v.null()),
   description: v.string(),
   category: v.string(),
   explicit: v.boolean(),
@@ -84,7 +85,7 @@ export const getById = query({
     const author = await ctx.db.get("users", show.authorId);
     return {
       ...(await toCard(ctx, show)),
-      authorImageUrl: author?.image ?? "",
+      authorImageUrl: author ? await avatarUrlOf(ctx, author) : null,
       description: show.description,
       category: show.category,
       explicit: show.explicit,
