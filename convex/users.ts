@@ -22,7 +22,7 @@ import {
   syncAuthorFields,
 } from "./lib/auth";
 import { freshUpload, generationOf } from "./lib/covers";
-import { clampLimit } from "./lib/limits";
+import { clampLimit, USER_PAGE_MAX } from "./lib/limits";
 import { cleanProfile, profileError } from "./lib/profile";
 import { blockOf, followOf, hiddenAuthorIds, takeWhere } from "./lib/social";
 import { invalid } from "./lib/validation";
@@ -147,8 +147,6 @@ export const getTopCreators = query({
 });
 
 const userRow = v.object({ _id: v.id("users"), name: v.string(), avatarUrl });
-// The followers dialog and Ajustes load 20 accounts at a time.
-const USER_PAGE_MAX = 20;
 const EMPTY_PAGE = { page: [], isDone: true, continueCursor: "" };
 
 function checkPageSize(numItems: number) {

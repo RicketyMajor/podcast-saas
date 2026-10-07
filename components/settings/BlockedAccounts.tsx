@@ -10,18 +10,17 @@ import {
   UserRowsSkeleton,
   type UserRowData,
 } from "@/components/profile/UserRow";
-import { PillButton } from "@/components/shared/PillButton";
+import { LoadMoreButton } from "@/components/shared/LoadMoreButton";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { USER_PAGE_MAX } from "@/convex/lib/limits";
 import { errorMessage } from "@/lib/utils";
-
-const PAGE_SIZE = 20; // users.ts USER_PAGE_MAX
 
 export function BlockedAccounts() {
   const { results, status, loadMore } = usePaginatedQuery(
     api.users.getBlocked,
     {},
-    { initialNumItems: PAGE_SIZE },
+    { initialNumItems: USER_PAGE_MAX },
   );
 
   return (
@@ -55,19 +54,10 @@ export function BlockedAccounts() {
           ))}
         </ul>
       )}
-      {(status === "CanLoadMore" || status === "LoadingMore") && (
-        <PillButton
-          tone="glass"
-          className="h-11 self-center"
-          disabled={status === "LoadingMore"}
-          onClick={() => loadMore(PAGE_SIZE)}
-        >
-          {status === "LoadingMore" && (
-            <Loader2 aria-hidden className="animate-spin" />
-          )}
-          Cargar más
-        </PillButton>
-      )}
+      <LoadMoreButton
+        status={status}
+        onLoadMore={() => loadMore(USER_PAGE_MAX)}
+      />
     </section>
   );
 }

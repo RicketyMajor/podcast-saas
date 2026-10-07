@@ -1,18 +1,11 @@
 "use client";
 
 import { useMutation, usePaginatedQuery } from "convex/react";
-import {
-  Ban,
-  Loader2,
-  MoreHorizontal,
-  UserCheck,
-  UserMinus,
-  Users,
-} from "lucide-react";
+import { Ban, MoreHorizontal, UserCheck, UserMinus, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { PillButton } from "@/components/shared/PillButton";
+import { LoadMoreButton } from "@/components/shared/LoadMoreButton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,13 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/convex/_generated/api";
+import { USER_PAGE_MAX } from "@/convex/lib/limits";
 import { errorMessage, formatCount } from "@/lib/utils";
 
 import { BlockDialog } from "./BlockDialog";
 import type { ProfileData } from "./ProfileHeader";
 import { UserRow, UserRowsSkeleton, type UserRowData } from "./UserRow";
 
-const PAGE_SIZE = 20; // users.ts USER_PAGE_MAX
 type Kind = "followers" | "following";
 
 /** "N seguidores" / "N siguiendo": opens the list in a dialog. */
@@ -100,7 +93,7 @@ function FollowList({
   const { results, status, loadMore } = usePaginatedQuery(
     kind === "followers" ? api.users.getFollowers : api.users.getFollowing,
     { profileId: profile._id },
-    { initialNumItems: PAGE_SIZE },
+    { initialNumItems: USER_PAGE_MAX },
   );
 
   if (status === "LoadingFirstPage") {
@@ -128,19 +121,10 @@ function FollowList({
           </UserRow>
         ))}
       </ul>
-      {(status === "CanLoadMore" || status === "LoadingMore") && (
-        <PillButton
-          tone="glass"
-          className="h-11 self-center"
-          disabled={status === "LoadingMore"}
-          onClick={() => loadMore(PAGE_SIZE)}
-        >
-          {status === "LoadingMore" && (
-            <Loader2 aria-hidden className="animate-spin" />
-          )}
-          Cargar más
-        </PillButton>
-      )}
+      <LoadMoreButton
+        status={status}
+        onLoadMore={() => loadMore(USER_PAGE_MAX)}
+      />
     </div>
   );
 }

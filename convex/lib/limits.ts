@@ -89,3 +89,7 @@ export const HOST_NAME_MAX_CHARS = 20;
 export const DISPLAY_NAME_MAX_CHARS = 60;
 export const BIO_MAX_CHARS = 160;
 export const WEBSITE_MAX_CHARS = 200;
+
+// Phase 23: one page of the followers dialog and of Ajustes → "Cuentas
+// bloqueadas"; the server refuses bigger pages.
+export const USER_PAGE_MAX = 20;

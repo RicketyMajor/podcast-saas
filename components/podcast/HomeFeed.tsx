@@ -5,10 +5,11 @@ import {
   usePreloadedQuery,
   type Preloaded,
 } from "convex/react";
-import { Loader2, Mic, Radio } from "lucide-react";
+import { Mic, Radio } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { LoadMoreButton } from "@/components/shared/LoadMoreButton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PillButton } from "@/components/shared/PillButton";
 import { Shelf } from "@/components/shared/Shelf";
@@ -94,20 +95,10 @@ export function HomeFeed({
             latest.status === "LoadingFirstPage" ? undefined : latest.results
           }
         />
-        {(latest.status === "CanLoadMore" ||
-          latest.status === "LoadingMore") && (
-          <PillButton
-            tone="glass"
-            className="self-center"
-            disabled={latest.status === "LoadingMore"}
-            onClick={() => latest.loadMore(PAGE_SIZE)}
-          >
-            {latest.status === "LoadingMore" && (
-              <Loader2 aria-hidden className="animate-spin" />
-            )}
-            Cargar más
-          </PillButton>
-        )}
+        <LoadMoreButton
+          status={latest.status}
+          onLoadMore={() => latest.loadMore(PAGE_SIZE)}
+        />
       </section>
     </>
   );
