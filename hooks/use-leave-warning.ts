@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 
-const MESSAGE = "Tienes cambios sin publicar. ¿Salir de todos modos?";
+// Shared by the episode, show and profile forms: "guardar" fits all three.
+const MESSAGE = "Tienes cambios sin guardar. ¿Salir de todos modos?";
 
 /**
  * While `active`, asks before leaving: reload/close via beforeunload, and

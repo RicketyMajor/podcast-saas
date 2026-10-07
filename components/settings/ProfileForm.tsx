@@ -7,7 +7,7 @@ import { ConvexError } from "convex/values";
 import { ImageUp, Loader2, LogIn, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -86,6 +86,8 @@ function Form({ settings }: { settings: Settings }) {
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const [photo, setPhoto] = useState<Photo>("keep");
   const [uploading, setUploading] = useState(false);
+  // "Quitar foto" disappears once used: focus moves to the upload control.
+  const fileInput = useRef<HTMLInputElement>(null);
   const {
     control,
     handleSubmit,
@@ -193,6 +195,7 @@ function Form({ settings }: { settings: Settings }) {
                         ? "Cambiar foto"
                         : "Subir foto"}
                     <input
+                      ref={fileInput}
                       type="file"
                       accept={COVER_TYPES.join(",")}
                       className="sr-only"
@@ -211,7 +214,10 @@ function Form({ settings }: { settings: Settings }) {
                     variant="ghost"
                     className="h-11 rounded-full px-4 text-muted-foreground"
                     disabled={uploading || isSubmitting}
-                    onClick={() => setPhoto("remove")}
+                    onClick={() => {
+                      setPhoto("remove");
+                      fileInput.current?.focus();
+                    }}
                   >
                     <Trash2 aria-hidden />
                     Quitar foto
@@ -256,7 +262,7 @@ function Form({ settings }: { settings: Settings }) {
             control={control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="profile-bio">Bio</FieldLabel>
+                <FieldLabel htmlFor="profile-bio">Bio (opcional)</FieldLabel>
                 <Textarea
                   {...field}
                   id="profile-bio"
