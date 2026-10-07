@@ -59,9 +59,6 @@ export default defineSchema({
     showId: v.id("shows"), // every episode belongs to a show (ADR-029)
     authorId: v.id("users"),
     authorName: v.string(),
-    // Unused since phase 22 (avatars resolve from the author); emptied by
-    // podcasts.clearAuthorImageUrl and dropped in phase 23.
-    authorImageUrl: v.optional(v.string()),
     title: v.string(),
     description: v.string(),
     transcript: v.string(),

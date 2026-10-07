@@ -9,7 +9,6 @@ import { ConvexError, v } from "convex/values";
 import { components } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
-  internalMutation,
   mutation,
   query,
   type MutationCtx,
@@ -592,27 +591,5 @@ export const registerView = mutation({
       });
     }
     return null;
-  },
-});
-
-// Phase 22: avatars resolve from the author, so the copied URL is dead
-// weight. Empties it (dry run first) so phase 23 can drop the field.
-// ponytail: one transaction over every podcast (a handful in prod); page with
-// a cursor if this pattern is reused on a big table.
-export const clearAuthorImageUrl = internalMutation({
-  args: { dryRun: v.boolean() },
-  returns: v.number(),
-  handler: async (ctx, { dryRun }) => {
-    let count = 0;
-    for await (const podcast of ctx.db.query("podcasts")) {
-      if (podcast.authorImageUrl === undefined) continue;
-      count++;
-      if (!dryRun) {
-        await ctx.db.patch("podcasts", podcast._id, {
-          authorImageUrl: undefined,
-        });
-      }
-    }
-    return count;
   },
 });
