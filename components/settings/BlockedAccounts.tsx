@@ -27,7 +27,8 @@ export function BlockedAccounts() {
   return (
     <section
       aria-labelledby="blocked-accounts"
-      className="flex flex-col gap-4 border-t border-foreground/8 pt-8"
+      // Space, not a rule: the form above already closes on its own hairline.
+      className="flex flex-col gap-4 pt-8"
     >
       <div className="flex flex-col gap-1">
         <h2

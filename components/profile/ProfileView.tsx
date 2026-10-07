@@ -149,7 +149,7 @@ function BlockedProfile({ profile }: { profile: ProfileData }) {
       as="h1"
       icon={Ban}
       title={`Bloqueaste a ${profile.name}`}
-      description="No ven el contenido del otro y no pueden seguirse."
+      description="Ninguno ve el contenido del otro y no pueden seguirse."
       action={
         <PillButton tone="glass" disabled={pending} onClick={handleUnblock}>
           {pending ? (
