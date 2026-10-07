@@ -42,7 +42,8 @@ export function ProfileHeader({
 }: {
   profile: ProfileData;
   podcasts: PodcastCardData[] | undefined;
-  isOwner: boolean;
+  /** undefined while the session user loads. */
+  isOwner: boolean | undefined;
 }) {
   const playable = podcasts?.filter((p) => p.audioUrl !== null) ?? [];
   // The creator's most-played cover lights the profile (ambient mode).
@@ -133,14 +134,14 @@ export function ProfileHeader({
               <FollowListButton
                 profile={profile}
                 kind="followers"
-                isOwner={isOwner}
+                isOwner={isOwner === true}
               />
             </li>
             <li>
               <FollowListButton
                 profile={profile}
                 kind="following"
-                isOwner={isOwner}
+                isOwner={isOwner === true}
               />
             </li>
           </ul>
@@ -167,7 +168,7 @@ export function ProfileHeader({
                 </PillButton>
               </>
             ) : (
-              <ProfileActions profile={profile} />
+              isOwner === false && <ProfileActions profile={profile} />
             )}
           </div>
         </div>

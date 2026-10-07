@@ -42,7 +42,10 @@ export function ProfileView({ profileId }: { profileId: string }) {
   );
   const me = useQuery(api.users.current);
 
-  const isOwner = !!profile && me?._id === profile._id;
+  // undefined until the session user loads, so neither the owner's buttons
+  // nor "Seguir" flash on the wrong profile.
+  const isOwner =
+    me === undefined ? undefined : !!profile && me?._id === profile._id;
   // Visitors only see shows with something to play; the owner sees all of
   // theirs (it's their "my shows" list).
   const listed = useMemo(
