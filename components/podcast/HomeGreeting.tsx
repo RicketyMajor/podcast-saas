@@ -7,10 +7,13 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { ANONYMOUS_NAME } from "@/convex/lib/profile";
 
 export function HomeGreeting() {
   const user = useQuery(api.users.current);
-  const firstName = user?.name?.trim().split(/\s+/)[0];
+  // A nameless account gets the tagline, not "Hola, Anónimo".
+  const firstName =
+    user && user.name !== ANONYMOUS_NAME ? user.name.split(/\s+/)[0] : null;
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
