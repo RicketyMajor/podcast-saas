@@ -2,7 +2,8 @@ import { HOUR, RateLimiter } from "@convex-dev/rate-limiter";
 import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import {
   authorNameOf,
   avatarUrlOf,
@@ -13,11 +14,14 @@ import {
 import { freshUpload, generationOf } from "./lib/covers";
 import { clampLimit } from "./lib/limits";
 import { cleanProfile, profileError } from "./lib/profile";
+import { blockOf, followOf } from "./lib/social";
 import { invalid } from "./lib/validation";
 
-// A name change rewrites every show and episode of its author.
-const profileLimits = new RateLimiter(components.rateLimiter, {
+// A name change rewrites every show and episode of its author; a follow or
+// block writes two counters.
+const userLimits = new RateLimiter(components.rateLimiter, {
   profileUpdate: { kind: "token bucket", rate: 10, period: HOUR },
+  social: { kind: "token bucket", rate: 60, period: HOUR },
 });
 
 // The uploaded photo, else Google's, else null (initial).
@@ -167,7 +171,7 @@ export const updateProfile = mutation({
       throw invalid("La foto no es válida. Sube una imagen PNG, JPG o WebP.");
     }
 
-    const { ok } = await profileLimits.limit(ctx, "profileUpdate", {
+    const { ok } = await userLimits.limit(ctx, "profileUpdate", {
       key: user._id,
     });
     if (!ok) {
@@ -198,6 +202,137 @@ export const updateProfile = mutation({
     if (user.avatarStorageId && user.avatarStorageId !== avatarStorageId) {
       await ctx.storage.delete(user.avatarStorageId);
     }
+    return null;
+  },
+});
+
+/**
+ * The signed-in user's id, once `otherId` is someone else who exists and the
+ * hourly budget every follow and block action shares allows one more.
+ */
+async function socialActor(ctx: MutationCtx, otherId: Id<"users">) {
+  const me = await getCurrentUserOrThrow(ctx);
+  if (otherId === me._id) {
+    throw invalid("No puedes hacer esto con tu propia cuenta.");
+  }
+  if ((await ctx.db.get("users", otherId)) === null) {
+    throw new ConvexError({
+      code: "NOT_FOUND",
+      message: "Esta cuenta no existe.",
+    });
+  }
+  const { ok } = await userLimits.limit(ctx, "social", { key: me._id });
+  if (!ok) {
+    throw new ConvexError({
+      code: "QUOTA_EXCEEDED",
+      message: "Hiciste muchos cambios seguidos. Inténtalo en un rato.",
+    });
+  }
+  return me._id;
+}
+
+/** Adds (1) or takes off (-1) one follow on both users' counters. */
+async function shiftFollowCounts(
+  ctx: MutationCtx,
+  followerId: Id<"users">,
+  followeeId: Id<"users">,
+  by: 1 | -1,
+) {
+  const [follower, followee] = await Promise.all([
+    ctx.db.get("users", followerId),
+    ctx.db.get("users", followeeId),
+  ]);
+  if (follower) {
+    await ctx.db.patch("users", followerId, {
+      followingCount: Math.max((follower.followingCount ?? 0) + by, 0),
+    });
+  }
+  if (followee) {
+    await ctx.db.patch("users", followeeId, {
+      followerCount: Math.max((followee.followerCount ?? 0) + by, 0),
+    });
+  }
+}
+
+/** Deletes the follow from `followerId` to `followeeId`, if there is one. */
+async function unlink(
+  ctx: MutationCtx,
+  followerId: Id<"users">,
+  followeeId: Id<"users">,
+) {
+  const follow = await followOf(ctx, followerId, followeeId);
+  if (follow === null) return;
+  await ctx.db.delete("follows", follow._id);
+  await shiftFollowCounts(ctx, followerId, followeeId, -1);
+}
+
+const otherUser = { userId: v.id("users") };
+
+export const follow = mutation({
+  args: otherUser,
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    const me = await socialActor(ctx, userId);
+    const [blocking, blockedBy] = await Promise.all([
+      blockOf(ctx, me, userId),
+      blockOf(ctx, userId, me),
+    ]);
+    // Same words both ways: never tells who blocked whom.
+    if (blocking !== null || blockedBy !== null) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "No puedes seguir a esta cuenta.",
+      });
+    }
+    if ((await followOf(ctx, me, userId)) !== null) return null;
+    await ctx.db.insert("follows", { followerId: me, followeeId: userId });
+    await shiftFollowCounts(ctx, me, userId, 1);
+    return null;
+  },
+});
+
+export const unfollow = mutation({
+  args: otherUser,
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    await unlink(ctx, await socialActor(ctx, userId), userId);
+    return null;
+  },
+});
+
+// Removing isn't blocking: they can follow again.
+export const removeFollower = mutation({
+  args: otherUser,
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    await unlink(ctx, userId, await socialActor(ctx, userId));
+    return null;
+  },
+});
+
+// Cuts both follows and vetoes new ones; while signed in, neither sees the
+// other's profile, shows or episodes (lib/social.ts).
+export const block = mutation({
+  args: otherUser,
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    const me = await socialActor(ctx, userId);
+    await unlink(ctx, me, userId);
+    await unlink(ctx, userId, me);
+    if ((await blockOf(ctx, me, userId)) === null) {
+      await ctx.db.insert("blocks", { blockerId: me, blockedId: userId });
+    }
+    return null;
+  },
+});
+
+// The follows a block cut don't come back.
+export const unblock = mutation({
+  args: otherUser,
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    const block = await blockOf(ctx, await socialActor(ctx, userId), userId);
+    if (block !== null) await ctx.db.delete("blocks", block._id);
     return null;
   },
 });
