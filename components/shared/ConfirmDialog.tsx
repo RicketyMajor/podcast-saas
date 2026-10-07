@@ -49,6 +49,8 @@ export function ConfirmDialog({
           <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
+            // Ivory on the red tint: shadcn's red-on-red label is 3.98:1 (axe).
+            className="dark:text-foreground"
             disabled={pending}
             onClick={async (event) => {
               event.preventDefault(); // keep it open while it works
