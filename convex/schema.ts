@@ -22,6 +22,9 @@ export default defineSchema({
     avatarStorageId: v.optional(v.id("_storage")),
     bio: v.optional(v.string()),
     website: v.optional(v.string()),
+    // Phase 23: denormalized like podcastCount; read with ?? 0.
+    followerCount: v.optional(v.number()),
+    followingCount: v.optional(v.number()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
@@ -88,6 +91,23 @@ export default defineSchema({
     .index("by_language", ["languageCode"])
     .index("by_image", ["imageStorageId"]) // an uploaded cover belongs to one podcast
     .searchIndex("search_text", { searchField: "searchText" }),
+
+  // Phase 23 (ADR-034). One row per follow; the counters live on users.
+  follows: defineTable({
+    followerId: v.id("users"),
+    followeeId: v.id("users"),
+  })
+    .index("by_follower", ["followerId"]) // their "Siguiendo", newest first
+    .index("by_followee", ["followeeId"]) // their "Seguidores", newest first
+    .index("by_follower_and_followee", ["followerId", "followeeId"]), // does A follow B?
+
+  // While signed in, a block hides each account from the other.
+  blocks: defineTable({
+    blockerId: v.id("users"),
+    blockedId: v.id("users"),
+  })
+    .index("by_blocker_and_blocked", ["blockerId", "blockedId"])
+    .index("by_blocked", ["blockedId"]),
 
   aiGenerations: defineTable({
     userId: v.id("users"),
