@@ -26,6 +26,7 @@ const PAGE_SIZE = 8;
 export function HomeFeed({
   preloadedTrending,
   preloadedShows,
+  preloadedFollowing,
   trendingTitle = "Tendencias",
   latestTitle = "Recientes",
   featured = false,
@@ -34,6 +35,8 @@ export function HomeFeed({
   preloadedTrending: Preloaded<typeof api.podcasts.getTrending>;
   /** Also from the server, so an empty row never flashes in and out. */
   preloadedShows: Preloaded<typeof api.shows.getPopular>;
+  /** Home only, from the server with the session: episodes from people you follow. */
+  preloadedFollowing?: Preloaded<typeof api.podcasts.getFromFollowing>;
   trendingTitle?: string;
   latestTitle?: string;
   /** Home: #1 trending as the hero, the rest as a shelf. */
@@ -76,6 +79,7 @@ export function HomeFeed({
           renderItem={(podcast) => <PodcastCard podcast={podcast} />}
         />
       )}
+      {preloadedFollowing && <FollowingShelf preloaded={preloadedFollowing} />}
       {shows.length > 0 && (
         <Shelf
           title="Shows populares"
@@ -106,5 +110,22 @@ export function HomeFeed({
         )}
       </section>
     </>
+  );
+}
+
+/** Hidden when empty: signed out, following nobody, or they haven't published. */
+function FollowingShelf({
+  preloaded,
+}: {
+  preloaded: Preloaded<typeof api.podcasts.getFromFollowing>;
+}) {
+  const podcasts = usePreloadedQuery(preloaded);
+  if (podcasts.length === 0) return null;
+  return (
+    <Shelf
+      title="De quienes sigues"
+      items={podcasts}
+      renderItem={(podcast) => <PodcastCard podcast={podcast} />}
+    />
   );
 }
