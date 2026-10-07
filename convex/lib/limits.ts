@@ -84,3 +84,8 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Two-voice conversations (phase 21): "Name: text" per turn.
 export const DIALOGUE_MAX_TURNS = 60;
 export const HOST_NAME_MAX_CHARS = 20;
+
+// Profile (phase 22). The display name also caps the name typed at sign-up.
+export const DISPLAY_NAME_MAX_CHARS = 60;
+export const BIO_MAX_CHARS = 160;
+export const WEBSITE_MAX_CHARS = 200;

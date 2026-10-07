@@ -8,6 +8,7 @@ import { components } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { authorNameOf } from "./lib/auth";
+import { DISPLAY_NAME_MAX_CHARS } from "./lib/limits";
 import { searchTextOf } from "./lib/text";
 
 // Every account brings its own daily AI quota, so mass sign-ups could drain
@@ -18,7 +19,6 @@ const signUpLimits = new RateLimiter(components.rateLimiter, {
 });
 
 const MIN_PASSWORD_LENGTH = 8;
-const MAX_NAME_LENGTH = 60;
 
 // ponytail: Password's own errors ("Invalid credentials", "Account … already exists")
 // are plain Errors, redacted in production; the client maps any failure to a generic
@@ -31,10 +31,10 @@ const password = Password<DataModel>({
     if (params.flow !== "signUp") return { email };
 
     const name = String(params.name ?? "").trim();
-    if (!name || name.length > MAX_NAME_LENGTH) {
+    if (!name || name.length > DISPLAY_NAME_MAX_CHARS) {
       throw new ConvexError({
         code: "VALIDATION",
-        message: `Escribe tu nombre (máximo ${MAX_NAME_LENGTH} caracteres).`,
+        message: `Escribe tu nombre (máximo ${DISPLAY_NAME_MAX_CHARS} caracteres).`,
       });
     }
     return { email, name };

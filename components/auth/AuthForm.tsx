@@ -18,13 +18,13 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { DISPLAY_NAME_MAX_CHARS } from "@/convex/lib/limits";
 
 type Mode = "signIn" | "signUp";
 type Errors = Partial<Record<"name" | "email" | "password" | "form", string>>;
 
 // Mirrors convex/auth.ts; the server re-validates.
 const MIN_PASSWORD_LENGTH = 8;
-const MAX_NAME_LENGTH = 60;
 
 const COPY = {
   signIn: {
@@ -57,8 +57,8 @@ function validate(mode: Mode, data: FormData): Errors {
   const password = String(data.get("password") ?? "");
 
   if (mode === "signUp" && !name) errors.name = "Escribe tu nombre.";
-  if (name.length > MAX_NAME_LENGTH)
-    errors.name = `Máximo ${MAX_NAME_LENGTH} caracteres.`;
+  if (name.length > DISPLAY_NAME_MAX_CHARS)
+    errors.name = `Máximo ${DISPLAY_NAME_MAX_CHARS} caracteres.`;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     errors.email = "Escribe un email válido.";
   if (!password) errors.password = "Escribe tu contraseña.";
@@ -129,7 +129,7 @@ export function AuthForm({
                 className="h-11"
                 name="name"
                 autoComplete="name"
-                maxLength={MAX_NAME_LENGTH}
+                maxLength={DISPLAY_NAME_MAX_CHARS}
                 aria-invalid={!!errors.name}
               />
               <FieldError>{errors.name}</FieldError>
