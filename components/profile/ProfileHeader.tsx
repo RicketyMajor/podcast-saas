@@ -19,6 +19,9 @@ import { formatCount } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 import { usePlayerStore } from "@/stores/player-store";
 
+import { FollowListButton } from "./FollowListDialog";
+import { ProfileActions } from "./ProfileActions";
+
 export type ProfileData = NonNullable<
   FunctionReturnType<typeof api.users.getById>
 >;
@@ -126,36 +129,47 @@ export function ProfileHeader({
               </span>
               {profile.totalViews === 1 ? "reproducción" : "reproducciones"}
             </li>
+            <li>
+              <FollowListButton
+                profile={profile}
+                kind="followers"
+                isOwner={isOwner}
+              />
+            </li>
+            <li>
+              <FollowListButton
+                profile={profile}
+                kind="following"
+                isOwner={isOwner}
+              />
+            </li>
           </ul>
-          {(profile.podcastCount > 0 || isOwner) && (
-            <div className="flex flex-wrap justify-center gap-3 pt-1 sm:justify-start">
-              {profile.podcastCount > 0 && (
-                <PillButton
-                  disabled={playable.length === 0}
-                  onClick={playRandom}
-                >
-                  <Shuffle aria-hidden />
-                  Reproducir aleatorio
-                </PillButton>
-              )}
-              {isOwner && (
+          <div className="flex flex-wrap justify-center gap-3 pt-1 sm:justify-start">
+            {profile.podcastCount > 0 && (
+              <PillButton disabled={playable.length === 0} onClick={playRandom}>
+                <Shuffle aria-hidden />
+                Reproducir aleatorio
+              </PillButton>
+            )}
+            {isOwner ? (
+              <>
                 <PillButton asChild tone="glass">
                   <Link href="/create-podcast">
                     <Mic aria-hidden />
                     Crear podcast
                   </Link>
                 </PillButton>
-              )}
-              {isOwner && (
                 <PillButton asChild tone="glass">
                   <Link href="/settings">
                     <Pencil aria-hidden />
                     Editar perfil
                   </Link>
                 </PillButton>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <ProfileActions profile={profile} />
+            )}
+          </div>
         </div>
       </div>
     </header>

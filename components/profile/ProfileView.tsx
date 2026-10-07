@@ -1,9 +1,20 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { Home, ListMusic, Mic, Plus, Radio, UserX } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import {
+  Ban,
+  Home,
+  ListMusic,
+  Loader2,
+  Mic,
+  Plus,
+  Radio,
+  Undo2,
+  UserX,
+} from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { PodcastGrid } from "@/components/podcast/PodcastGrid";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -13,18 +24,21 @@ import { Shelf } from "@/components/shared/Shelf";
 import { ShowCard } from "@/components/show/ShowCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
+import { errorMessage } from "@/lib/utils";
 
-import { ProfileHeader } from "./ProfileHeader";
+import { ProfileHeader, type ProfileData } from "./ProfileHeader";
 
 export function ProfileView({ profileId }: { profileId: string }) {
   const profile = useQuery(api.users.getById, { profileId });
+  // A profile you blocked shows nothing of theirs: don't even ask.
+  const visible = profile && !profile.blockedByMe ? profile : null;
   const podcasts = useQuery(
     api.podcasts.getByAuthor,
-    profile ? { authorId: profile._id } : "skip",
+    visible ? { authorId: visible._id } : "skip",
   );
   const shows = useQuery(
     api.shows.getByAuthor,
-    profile ? { authorId: profile._id } : "skip",
+    visible ? { authorId: visible._id } : "skip",
   );
   const me = useQuery(api.users.current);
 
@@ -38,6 +52,7 @@ export function ProfileView({ profileId }: { profileId: string }) {
 
   if (profile === undefined) return <ProfileSkeleton />;
   if (profile === null) return <ProfileNotFound />;
+  if (profile.blockedByMe) return <BlockedProfile profile={profile} />;
 
   // Who is looking and what there is pick the layout: wait for both
   // instead of flashing the wrong empty state.
@@ -109,6 +124,43 @@ export function ProfileView({ profileId }: { profileId: string }) {
         </>
       )}
     </div>
+  );
+}
+
+/** A profile you blocked: who it is, and the way back. Nothing else. */
+function BlockedProfile({ profile }: { profile: ProfileData }) {
+  const unblock = useMutation(api.users.unblock);
+  const [pending, setPending] = useState(false);
+
+  async function handleUnblock() {
+    setPending(true);
+    try {
+      await unblock({ userId: profile._id });
+      toast.success(`Desbloqueaste a ${profile.name}.`);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <EmptyState
+      as="h1"
+      icon={Ban}
+      title={`Bloqueaste a ${profile.name}`}
+      description="No ven el contenido del otro y no pueden seguirse."
+      action={
+        <PillButton tone="glass" disabled={pending} onClick={handleUnblock}>
+          {pending ? (
+            <Loader2 aria-hidden className="animate-spin" />
+          ) : (
+            <Undo2 aria-hidden />
+          )}
+          Desbloquear
+        </PillButton>
+      }
+    />
   );
 }
 
