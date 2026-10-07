@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 24">
+  <!-- The bars of WAVE_BARS (lib/constants.ts): y = (24 - h) / 2. -->
   <g fill="#50b9df">
     <rect x="1" y="8" width="3" height="8" rx="1.5"/>
     <rect x="6" y="4" width="3" height="16" rx="1.5"/>

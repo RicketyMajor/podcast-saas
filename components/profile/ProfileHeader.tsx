@@ -23,6 +23,15 @@ export type ProfileData = NonNullable<
   FunctionReturnType<typeof api.users.getById>
 >;
 
+/** "waves.test" for https://www.waves.test/x; the raw value if it won't parse. */
+function hostOf(url: string) {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return url; // only updateProfile writes it, but a bad row must not crash the page
+  }
+}
+
 export function ProfileHeader({
   profile,
   podcasts,
@@ -98,10 +107,7 @@ export function ProfileHeader({
               className="-my-2 inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full text-sm font-medium text-foreground/80 hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               <LinkIcon aria-hidden className="size-4 shrink-0" />
-              {/* updateProfile only stores URLs that websiteError accepts. */}
-              <span className="truncate">
-                {new URL(profile.website).host.replace(/^www\./, "")}
-              </span>
+              <span className="truncate">{hostOf(profile.website)}</span>
               <span className="sr-only"> (se abre en otra pestaña)</span>
             </a>
           )}
