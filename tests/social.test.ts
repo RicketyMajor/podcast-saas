@@ -35,4 +35,16 @@ describe("takeWhere", () => {
       await takeWhere(stream([1, 3, 5], []), 2, (n) => n % 2 === 0),
     ).toEqual([]);
   });
+
+  it("stops after maxScan reads, even if short of n", async () => {
+    const read: number[] = [];
+    const big = await takeWhere(
+      stream([1, 2, 3, 4, 5, 6, 7, 8], read),
+      2,
+      (n) => n > 6,
+      5,
+    );
+    expect(big).toEqual([]);
+    expect(read).toEqual([1, 2, 3, 4, 5]);
+  });
 });

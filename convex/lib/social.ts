@@ -30,21 +30,30 @@ export async function hiddenAuthorIds(ctx: QueryCtx) {
   ]);
 }
 
+// ponytail: whoever blocks you decides what your lists skip, so the scan has
+// a ceiling: past it the list comes back short. A per-viewer visibility
+// index would be the fix if blocked catalogs ever reach this size.
+const MAX_SCAN = 1_000;
+
 /**
- * The first `n` docs that pass `keep`, reading only as far as needed: with
- * nothing to skip it reads exactly what `.take(n)` would.
+ * The first `n` docs that pass `keep`, reading only as far as needed (at most
+ * `maxScan`): with nothing to skip it reads exactly what `.take(n)` would.
  */
 export async function takeWhere<T>(
   docs: AsyncIterable<T>,
   n: number,
   keep: (doc: T) => boolean,
+  maxScan = MAX_SCAN,
 ) {
   const kept: T[] = [];
   if (n < 1) return kept;
+  let read = 0;
   for await (const doc of docs) {
-    if (!keep(doc)) continue;
-    kept.push(doc);
-    if (kept.length === n) break;
+    if (keep(doc)) {
+      kept.push(doc);
+      if (kept.length === n) break;
+    }
+    if (++read === maxScan) break;
   }
   return kept;
 }
