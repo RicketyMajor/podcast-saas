@@ -21,6 +21,7 @@ import {
   IMAGE_PROMPT_MIN_CHARS,
   UPLOAD_MAX_MB,
 } from "@/convex/lib/limits";
+import { uploadFile } from "@/lib/upload";
 import { cn, formatCount } from "@/lib/utils";
 import { coverFileError } from "@/lib/validations/podcast";
 
@@ -96,16 +97,7 @@ export function GenerateThumbnail({
 
     setPending("upload");
     try {
-      const uploadUrl = await generateUploadUrl();
-      const res = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      const { storageId } = (await res.json()) as {
-        storageId: Id<"_storage">;
-      };
+      const storageId = await uploadFile(await generateUploadUrl(), file);
       // The local copy previews instantly; the storageId is what gets saved.
       replace({ storageId, url: URL.createObjectURL(file), source: "upload" });
       toast.success("Imagen subida.");

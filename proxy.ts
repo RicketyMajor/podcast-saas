@@ -9,6 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   "/podcasts/(.*)/edit",
   "/shows/new",
   "/shows/(.*)/edit",
+  "/settings(.*)",
 ]);
 const isAuthPage = createRouteMatcher(["/sign-in", "/sign-up"]);
 
