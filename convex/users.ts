@@ -1,9 +1,19 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { HOUR, RateLimiter } from "@convex-dev/rate-limiter";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { mutation, query, type MutationCtx } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
 import {
   authorNameOf,
   avatarUrlOf,
@@ -14,7 +24,7 @@ import {
 import { freshUpload, generationOf } from "./lib/covers";
 import { clampLimit } from "./lib/limits";
 import { cleanProfile, profileError } from "./lib/profile";
-import { blockOf, followOf } from "./lib/social";
+import { blockOf, followOf, hiddenAuthorIds } from "./lib/social";
 import { invalid } from "./lib/validation";
 
 // A name change rewrites every show and episode of its author; a follow or
@@ -66,12 +76,30 @@ export const getById = query({
       website: v.union(v.string(), v.null()),
       podcastCount: v.number(),
       totalViews: v.number(),
+      followerCount: v.number(),
+      followingCount: v.number(),
+      following: v.boolean(), // false signed out or on your own profile
+      blockedByMe: v.boolean(), // the page shows only "Desbloquear"
     }),
   ),
   handler: async (ctx, args) => {
     const userId = ctx.db.normalizeId("users", args.profileId);
     const user = userId && (await ctx.db.get("users", userId));
     if (!user) return null;
+
+    const relation = { following: false, blockedByMe: false };
+    const me = await getAuthUserId(ctx);
+    if (me !== null && me !== user._id) {
+      const [blockedMe, blockedByMe, following] = await Promise.all([
+        blockOf(ctx, user._id, me),
+        blockOf(ctx, me, user._id),
+        followOf(ctx, me, user._id),
+      ]);
+      // Blocked by them: the profile doesn't exist, with no hint of why.
+      if (blockedMe !== null) return null;
+      relation.blockedByMe = blockedByMe !== null;
+      relation.following = following !== null;
+    }
     return {
       _id: user._id,
       name: authorNameOf(user),
@@ -80,6 +108,9 @@ export const getById = query({
       website: user.website ?? null,
       podcastCount: user.podcastCount ?? 0,
       totalViews: user.totalViews ?? 0,
+      followerCount: user.followerCount ?? 0,
+      followingCount: user.followingCount ?? 0,
+      ...relation,
     };
   },
 });
@@ -108,6 +139,109 @@ export const getTopCreators = query({
         podcastCount: user.podcastCount ?? 0,
       })),
     );
+  },
+});
+
+const userRow = v.object({ _id: v.id("users"), name: v.string(), avatarUrl });
+// The followers dialog and Ajustes load 20 accounts at a time.
+const USER_PAGE_MAX = 20;
+const EMPTY_PAGE = { page: [], isDone: true, continueCursor: "" };
+
+function checkPageSize(numItems: number) {
+  if (numItems > USER_PAGE_MAX) {
+    throw invalid(`Pide hasta ${USER_PAGE_MAX} cuentas por página.`);
+  }
+}
+
+/** The visible accounts among `ids`, in order, as list rows. */
+async function userRows(
+  ctx: QueryCtx,
+  ids: Id<"users">[],
+  hidden: Set<Id<"users">>,
+) {
+  const users = await Promise.all(
+    ids.filter((id) => !hidden.has(id)).map((id) => ctx.db.get("users", id)),
+  );
+  return await Promise.all(
+    users
+      .filter((user) => user !== null)
+      .map(async (user) => ({
+        _id: user._id,
+        name: authorNameOf(user),
+        avatarUrl: await avatarUrlOf(ctx, user),
+      })),
+  );
+}
+
+// Public, like the counters. Accounts hidden by a block drop out, so a page
+// can come back shorter than asked (usePaginatedQuery copes).
+export const getFollowers = query({
+  args: { profileId: v.id("users"), paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(userRow),
+  handler: async (ctx, { profileId, paginationOpts }) => {
+    checkPageSize(paginationOpts.numItems);
+    const hidden = await hiddenAuthorIds(ctx);
+    if (hidden.has(profileId)) return EMPTY_PAGE;
+    const result = await ctx.db
+      .query("follows")
+      .withIndex("by_followee", (q) => q.eq("followeeId", profileId))
+      .order("desc")
+      .paginate(paginationOpts);
+    return {
+      ...result,
+      page: await userRows(
+        ctx,
+        result.page.map((f) => f.followerId),
+        hidden,
+      ),
+    };
+  },
+});
+
+export const getFollowing = query({
+  args: { profileId: v.id("users"), paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(userRow),
+  handler: async (ctx, { profileId, paginationOpts }) => {
+    checkPageSize(paginationOpts.numItems);
+    const hidden = await hiddenAuthorIds(ctx);
+    if (hidden.has(profileId)) return EMPTY_PAGE;
+    const result = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", profileId))
+      .order("desc")
+      .paginate(paginationOpts);
+    return {
+      ...result,
+      page: await userRows(
+        ctx,
+        result.page.map((f) => f.followeeId),
+        hidden,
+      ),
+    };
+  },
+});
+
+// Ajustes → "Cuentas bloqueadas": only your own (ordered by account id).
+export const getBlocked = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(userRow),
+  handler: async (ctx, { paginationOpts }) => {
+    checkPageSize(paginationOpts.numItems);
+    const me = await getAuthUserId(ctx);
+    if (me === null) return EMPTY_PAGE;
+    const result = await ctx.db
+      .query("blocks")
+      .withIndex("by_blocker_and_blocked", (q) => q.eq("blockerId", me))
+      .order("desc")
+      .paginate(paginationOpts);
+    return {
+      ...result,
+      page: await userRows(
+        ctx,
+        result.page.map((b) => b.blockedId),
+        new Set(),
+      ),
+    };
   },
 });
 

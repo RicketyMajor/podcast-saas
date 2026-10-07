@@ -266,6 +266,38 @@ export const getSimilar = query({
   },
 });
 
+// Inicio → "De quienes sigues". No hiding needed: a block deletes the
+// follows both ways and follow refuses a blocked pair.
+// ponytail: the 100 most recent follows × their 3 newest episodes; a fan-out
+// table (one row per follower per new episode) if people follow hundreds.
+export const getFromFollowing = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(podcastCard),
+  handler: async (ctx, { limit }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return [];
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", userId))
+      .order("desc")
+      .take(100);
+    const latest = await Promise.all(
+      follows.map((f) =>
+        ctx.db
+          .query("podcasts")
+          .withIndex("by_author", (q) => q.eq("authorId", f.followeeId))
+          .order("desc")
+          .take(3),
+      ),
+    );
+    const newest = latest
+      .flat()
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .slice(0, clampLimit(limit, 8, 20));
+    return await Promise.all(newest.map((p) => toCard(ctx, p)));
+  },
+});
+
 // Editable fields, shared by create and update.
 const podcastFields = {
   title: v.string(),
