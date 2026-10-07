@@ -2,7 +2,6 @@
 
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ConvexError } from "convex/values";
 import {
   Globe,
   Headphones,
@@ -21,7 +20,7 @@ import { toast } from "sonner";
 
 import { PlayPauseIcon } from "@/components/player/PlayPauseIcon";
 import type { PodcastCardData } from "@/components/podcast/PodcastCard";
-import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PillButton } from "@/components/shared/PillButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
 import { SHOW_CATEGORIES } from "@/convex/lib/limits";
-import { formatCount } from "@/lib/utils";
+import { errorMessage, formatCount } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 import { usePlayerStore } from "@/stores/player-store";
 
@@ -217,11 +216,7 @@ function AuthorActions({ show }: { show: ShowDetailData }) {
       toast.success("Show borrado.");
       router.replace(`/profile/${show.authorId}`);
     } catch (err) {
-      toast.error(
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message)
-          : "Algo salió mal. Inténtalo de nuevo.",
-      );
+      toast.error(errorMessage(err));
     }
   }
 
@@ -263,10 +258,13 @@ function AuthorActions({ show }: { show: ShowDetailData }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ConfirmDeleteDialog
+      <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title={show.title}
+        title={`¿Borrar «${show.title}»?`}
+        description="Esta acción no se puede deshacer."
+        confirmLabel="Borrar"
+        pendingLabel="Borrando…"
         onConfirm={handleDelete}
       />
     </>

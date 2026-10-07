@@ -1,7 +1,6 @@
 "use client";
 
 import { useAction } from "convex/react";
-import { ConvexError } from "convex/values";
 import { AudioLines, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
@@ -13,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { SCRIPT_MAX_CHARS, SCRIPT_MIN_CHARS } from "@/convex/lib/limits";
-import { formatCount, formatDuration } from "@/lib/utils";
+import { errorMessage, formatCount, formatDuration } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player-store";
 import {
   conversationIssues,
@@ -40,8 +39,6 @@ export type GeneratedAudio = {
   durationSec: number;
   source: AudioSource;
 };
-
-const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
 
 // ponytail: rough fit of TTS time vs. script length (~1 min of speech ≈
 // 900 chars ≈ 15 s); tune it if real generations drift from the estimate.
@@ -133,10 +130,7 @@ export function GeneratePodcast({
       onAudioChange({ ...result, source });
       toast.success("Audio generado.");
     } catch (err) {
-      const message =
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message ?? GENERIC_ERROR)
-          : GENERIC_ERROR;
+      const message = errorMessage(err);
       setError(message);
       toast.error(message);
     } finally {

@@ -2,7 +2,6 @@
 
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ConvexError } from "convex/values";
 import {
   AudioLines,
   Clock,
@@ -21,7 +20,7 @@ import { toast } from "sonner";
 
 import { PlayPauseIcon } from "@/components/player/PlayPauseIcon";
 import { AiBadge } from "@/components/shared/AiBadge";
-import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
-import { formatCount, formatDuration } from "@/lib/utils";
+import { errorMessage, formatCount, formatDuration } from "@/lib/utils";
 import { usePageCover } from "@/stores/ambient-store";
 import { usePlayerStore } from "@/stores/player-store";
 
@@ -288,11 +287,7 @@ function AuthorActions({ podcast }: { podcast: PodcastDetailData }) {
       toast.success("Podcast borrado.");
       router.replace(`/profile/${podcast.authorId}`);
     } catch (err) {
-      toast.error(
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message)
-          : "Algo salió mal. Inténtalo de nuevo.",
-      );
+      toast.error(errorMessage(err));
     }
   }
 
@@ -325,10 +320,13 @@ function AuthorActions({ podcast }: { podcast: PodcastDetailData }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ConfirmDeleteDialog
+      <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title={podcast.title}
+        title={`¿Borrar «${podcast.title}»?`}
+        description="Esta acción no se puede deshacer."
+        confirmLabel="Borrar"
+        pendingLabel="Borrando…"
         onConfirm={handleDelete}
       />
     </>

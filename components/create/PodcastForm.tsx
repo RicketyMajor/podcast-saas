@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ConvexError } from "convex/values";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,7 +71,7 @@ import {
 } from "@/convex/lib/dialogue";
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { SPEAKING_RATE_LABELS } from "@/lib/constants";
-import { cn, formatCount } from "@/lib/utils";
+import { cn, errorMessage, formatCount } from "@/lib/utils";
 import {
   conversationIssues,
   hostsOf,
@@ -370,11 +369,7 @@ export function PodcastForm({
         router.push(`/podcasts/${podcastId}`);
       }
     } catch (err) {
-      toast.error(
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message)
-          : "Algo salió mal. Inténtalo de nuevo.",
-      );
+      toast.error(errorMessage(err));
     }
   });
 

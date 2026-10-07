@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ConvexError } from "convex/values";
 import { ImageUp, Loader2, LogIn, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,7 +37,7 @@ import {
 } from "@/convex/lib/limits";
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { uploadFile } from "@/lib/upload";
-import { cn, formatCount } from "@/lib/utils";
+import { cn, errorMessage, formatCount } from "@/lib/utils";
 import { ANONYMOUS_NAME, oneLine } from "@/convex/lib/profile";
 import { coverFileError } from "@/lib/validations/podcast";
 import {
@@ -54,12 +53,6 @@ const CONTROL = "h-11";
 const FIELDSET = "min-w-0";
 const LEGEND =
   "mb-5 font-display text-[1.375rem] font-bold tracking-[-0.025em] data-[variant=legend]:text-[1.375rem]";
-const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
-
-const messageOf = (err: unknown) =>
-  err instanceof ConvexError
-    ? String((err.data as { message?: string }).message ?? GENERIC_ERROR)
-    : GENERIC_ERROR;
 
 export function ProfileForm() {
   const settings = useQuery(api.users.getSettings);
@@ -146,7 +139,7 @@ function Form({ settings }: { settings: Settings }) {
       const storageId = await uploadFile(await generateUploadUrl(), file);
       setPhoto({ storageId, url: URL.createObjectURL(file) });
     } catch (err) {
-      toast.error(messageOf(err));
+      toast.error(errorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -161,7 +154,7 @@ function Form({ settings }: { settings: Settings }) {
       toast.success("Perfil actualizado.");
       router.push(`/profile/${settings._id}`);
     } catch (err) {
-      toast.error(messageOf(err));
+      toast.error(errorMessage(err));
     }
   });
 

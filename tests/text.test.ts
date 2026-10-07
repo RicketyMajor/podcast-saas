@@ -1,7 +1,13 @@
+import { ConvexError } from "convex/values";
 import { describe, expect, it } from "vitest";
 
 import { normalizeSearchText, tidyScript } from "../convex/lib/text";
-import { formatCount, formatDuration, safeRedirectPath } from "../lib/utils";
+import {
+  errorMessage,
+  formatCount,
+  formatDuration,
+  safeRedirectPath,
+} from "../lib/utils";
 
 describe("normalizeSearchText", () => {
   it("drops accents and case so 'cancion' matches 'Canción'", () => {
@@ -56,6 +62,25 @@ describe("tidyScript", () => {
     );
     expect(tidyScript("Hola mundo. Adiós mundo cruel.", 20)).toBe(
       "Hola mundo.",
+    );
+  });
+});
+
+describe("errorMessage", () => {
+  it("shows the message a Convex function threw on purpose", () => {
+    const err = new ConvexError({
+      code: "VALIDATION",
+      message: "Escribe un título.",
+    });
+    expect(errorMessage(err)).toBe("Escribe un título.");
+  });
+
+  it("hides anything else behind the generic message", () => {
+    expect(errorMessage(new Error("boom"))).toBe(
+      "Algo salió mal. Inténtalo de nuevo.",
+    );
+    expect(errorMessage(new ConvexError({ code: "X" }))).toBe(
+      "Algo salió mal. Inténtalo de nuevo.",
     );
   });
 });

@@ -1,4 +1,14 @@
+import { ConvexError } from "convex/values";
+
 export { cn } from "cn";
+
+const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
+
+/** The Spanish message a Convex function threw on purpose, else a generic one. */
+export const errorMessage = (err: unknown) =>
+  err instanceof ConvexError
+    ? String((err.data as { message?: string }).message ?? GENERIC_ERROR)
+    : GENERIC_ERROR;
 
 // Only same-origin paths: blocks open redirects like `//evil.com` or `https://…`.
 export function safeRedirectPath(path: string | string[] | undefined) {

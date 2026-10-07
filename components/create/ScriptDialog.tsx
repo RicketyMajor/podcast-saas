@@ -1,7 +1,6 @@
 "use client";
 
 import { useAction } from "convex/react";
-import { ConvexError } from "convex/values";
 import { Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useWatch, type Control } from "react-hook-form";
@@ -43,9 +42,9 @@ import {
   SCRIPT_TOPIC_MAX_CHARS,
   SCRIPT_TOPIC_MIN_CHARS,
 } from "@/convex/lib/limits";
+import { errorMessage } from "@/lib/utils";
 import type { PodcastFormValues } from "@/lib/validations/podcast";
 
-const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
 const SELECT_TRIGGER = "h-11 w-full data-[size=default]:h-11";
 
 export function ScriptDialog({
@@ -102,11 +101,7 @@ export function ScriptDialog({
       setOpen(false);
       toast.success("Guion generado. Revísalo antes de generar el audio.");
     } catch (err) {
-      const message =
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message ?? GENERIC_ERROR)
-          : GENERIC_ERROR;
-      setError(message);
+      setError(errorMessage(err));
     } finally {
       setPending(false);
     }

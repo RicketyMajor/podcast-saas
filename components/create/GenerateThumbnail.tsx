@@ -1,7 +1,6 @@
 "use client";
 
 import { useAction, useMutation } from "convex/react";
-import { ConvexError } from "convex/values";
 import { ImageUp, Loader2, RefreshCw, Sparkles, Undo2 } from "lucide-react";
 import Image from "next/image";
 import { useState, type DragEvent } from "react";
@@ -22,7 +21,7 @@ import {
   UPLOAD_MAX_MB,
 } from "@/convex/lib/limits";
 import { uploadFile } from "@/lib/upload";
-import { cn, formatCount } from "@/lib/utils";
+import { cn, errorMessage, formatCount } from "@/lib/utils";
 import { coverFileError } from "@/lib/validations/podcast";
 
 export type Thumbnail = {
@@ -31,13 +30,6 @@ export type Thumbnail = {
   source: "ai" | "upload";
   prompt?: string;
 };
-
-const GENERIC_ERROR = "Algo salió mal. Inténtalo de nuevo.";
-
-const messageOf = (err: unknown) =>
-  err instanceof ConvexError
-    ? String((err.data as { message?: string }).message ?? GENERIC_ERROR)
-    : GENERIC_ERROR;
 
 export function GenerateThumbnail({
   image,
@@ -83,7 +75,7 @@ export function GenerateThumbnail({
       replace({ ...result, source: "ai", prompt: prompt.trim() });
       toast.success("Portada generada.");
     } catch (err) {
-      fail(messageOf(err));
+      fail(errorMessage(err));
     } finally {
       setPending(null);
     }
@@ -102,7 +94,7 @@ export function GenerateThumbnail({
       replace({ storageId, url: URL.createObjectURL(file), source: "upload" });
       toast.success("Imagen subida.");
     } catch (err) {
-      fail(messageOf(err));
+      fail(errorMessage(err));
     } finally {
       setPending(null);
     }

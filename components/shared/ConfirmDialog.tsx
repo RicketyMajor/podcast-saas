@@ -15,15 +15,21 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /** Controlled, so it can be opened from a dropdown item. */
-export function ConfirmDeleteDialog({
+export function ConfirmDialog({
   open,
   onOpenChange,
   title,
+  description,
+  confirmLabel,
+  pendingLabel,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  description: string;
+  confirmLabel: string;
+  pendingLabel: string;
   /** Resolves when done; the dialog stays open (and busy) until then. */
   onConfirm: () => Promise<void>;
 }) {
@@ -36,10 +42,8 @@ export function ConfirmDeleteDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Borrar «{title}»?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
@@ -47,7 +51,7 @@ export function ConfirmDeleteDialog({
             variant="destructive"
             disabled={pending}
             onClick={async (event) => {
-              event.preventDefault(); // keep it open while deleting
+              event.preventDefault(); // keep it open while it works
               setPending(true);
               try {
                 await onConfirm();
@@ -57,7 +61,7 @@ export function ConfirmDeleteDialog({
             }}
           >
             {pending && <Loader2 aria-hidden className="animate-spin" />}
-            {pending ? "Borrando…" : "Borrar"}
+            {pending ? pendingLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

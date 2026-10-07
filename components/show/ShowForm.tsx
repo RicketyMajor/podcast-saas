@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
-import { ConvexError } from "convex/values";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -38,6 +37,7 @@ import { api } from "@/convex/_generated/api";
 import { LANGUAGES } from "@/convex/ai/voices";
 import { SHOW_CATEGORIES } from "@/convex/lib/limits";
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
+import { errorMessage } from "@/lib/utils";
 import { showFormSchema, type ShowFormValues } from "@/lib/validations/show";
 import { usePageCover } from "@/stores/ambient-store";
 
@@ -142,11 +142,7 @@ export function ShowForm({
         );
       }
     } catch (err) {
-      toast.error(
-        err instanceof ConvexError
-          ? String((err.data as { message?: string }).message)
-          : "Algo salió mal. Inténtalo de nuevo.",
-      );
+      toast.error(errorMessage(err));
     }
   });
 
