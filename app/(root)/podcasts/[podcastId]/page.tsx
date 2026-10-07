@@ -1,3 +1,4 @@
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { preloadedQueryResult, preloadQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -5,9 +6,14 @@ import { cache } from "react";
 import { PodcastDetail } from "@/components/podcast/PodcastDetail";
 import { api } from "@/convex/_generated/api";
 
-// One Convex call per request, shared by the metadata and the page.
-const preloadPodcast = cache((podcastId: string) =>
-  preloadQuery(api.podcasts.getById, { podcastId }),
+// One Convex call per request, shared by the metadata and the page; with
+// the session, so a block hides it in both.
+const preloadPodcast = cache(async (podcastId: string) =>
+  preloadQuery(
+    api.podcasts.getById,
+    { podcastId },
+    { token: await convexAuthNextjsToken() },
+  ),
 );
 
 export async function generateMetadata({

@@ -1,3 +1,4 @@
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { preloadedQueryResult, preloadQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -6,9 +7,14 @@ import { ShowDetail } from "@/components/show/ShowDetail";
 import { api } from "@/convex/_generated/api";
 import { feedPath } from "@/lib/feed/rss";
 
-// One Convex call per request, shared by the metadata and the page.
-const preloadShow = cache((showId: string) =>
-  preloadQuery(api.shows.getById, { showId }),
+// One Convex call per request, shared by the metadata and the page; with
+// the session, so a block hides it in both.
+const preloadShow = cache(async (showId: string) =>
+  preloadQuery(
+    api.shows.getById,
+    { showId },
+    { token: await convexAuthNextjsToken() },
+  ),
 );
 
 export async function generateMetadata({

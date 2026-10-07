@@ -24,7 +24,7 @@ import {
 import { freshUpload, generationOf } from "./lib/covers";
 import { clampLimit } from "./lib/limits";
 import { cleanProfile, profileError } from "./lib/profile";
-import { blockOf, followOf, hiddenAuthorIds } from "./lib/social";
+import { blockOf, followOf, hiddenAuthorIds, takeWhere } from "./lib/social";
 import { invalid } from "./lib/validation";
 
 // A name change rewrites every show and episode of its author; a follow or
@@ -126,11 +126,15 @@ export const getTopCreators = query({
     }),
   ),
   handler: async (ctx, { limit }) => {
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_podcast_count", (q) => q.gt("podcastCount", 0))
-      .order("desc")
-      .take(clampLimit(limit, 5, 20));
+    const hidden = await hiddenAuthorIds(ctx);
+    const users = await takeWhere(
+      ctx.db
+        .query("users")
+        .withIndex("by_podcast_count", (q) => q.gt("podcastCount", 0))
+        .order("desc"),
+      clampLimit(limit, 5, 20),
+      (user) => !hidden.has(user._id),
+    );
     return await Promise.all(
       users.map(async (user) => ({
         _id: user._id,

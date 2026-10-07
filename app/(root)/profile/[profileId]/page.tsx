@@ -1,3 +1,4 @@
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 
@@ -8,7 +9,12 @@ export async function generateMetadata({
   params,
 }: PageProps<"/profile/[profileId]">): Promise<Metadata> {
   const { profileId } = await params;
-  const profile = await fetchQuery(api.users.getById, { profileId });
+  // With the session: a profile that blocked you is "not found" here too.
+  const profile = await fetchQuery(
+    api.users.getById,
+    { profileId },
+    { token: await convexAuthNextjsToken() },
+  );
   if (!profile) return { title: "Perfil no encontrado" };
   return {
     title: profile.name,

@@ -39,6 +39,7 @@ import {
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
 } from "./lib/limits";
+import { hiddenAuthorIds, takeWhere } from "./lib/social";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
 import {
   checkDialogue,
@@ -97,11 +98,12 @@ export const getTrending = query({
   args: { limit: v.optional(v.number()) },
   returns: v.array(podcastCard),
   handler: async (ctx, { limit }) => {
-    const podcasts = await ctx.db
-      .query("podcasts")
-      .withIndex("by_views")
-      .order("desc")
-      .take(clampLimit(limit, 8, 50));
+    const hidden = await hiddenAuthorIds(ctx);
+    const podcasts = await takeWhere(
+      ctx.db.query("podcasts").withIndex("by_views").order("desc"),
+      clampLimit(limit, 8, 50),
+      (p) => !hidden.has(p.authorId),
+    );
     return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
   },
 });
@@ -118,9 +120,15 @@ export const getLatest = query({
         ...paginationOpts,
         numItems: Math.min(paginationOpts.numItems, 50),
       });
+    const hidden = await hiddenAuthorIds(ctx);
     return {
       ...result,
-      page: await Promise.all(result.page.map((p) => toCard(ctx, p))),
+      // A hidden author's episodes drop out: the page can come back shorter.
+      page: await Promise.all(
+        result.page
+          .filter((p) => !hidden.has(p.authorId))
+          .map((p) => toCard(ctx, p)),
+      ),
     };
   },
 });
@@ -133,10 +141,14 @@ export const search = query({
   handler: async (ctx, args) => {
     const query = normalizeSearchText(args.query.slice(0, 100));
     if (query === "") return [];
-    const podcasts = await ctx.db
-      .query("podcasts")
-      .withSearchIndex("search_text", (q) => q.search("searchText", query))
-      .take(30);
+    const hidden = await hiddenAuthorIds(ctx);
+    const podcasts = await takeWhere(
+      ctx.db
+        .query("podcasts")
+        .withSearchIndex("search_text", (q) => q.search("searchText", query)),
+      30,
+      (p) => !hidden.has(p.authorId),
+    );
     return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
   },
 });
@@ -146,6 +158,8 @@ export const getByAuthor = query({
   args: { authorId: v.id("users") },
   returns: v.array(podcastCard),
   handler: async (ctx, { authorId }) => {
+    // A block hides an author's whole catalog, both ways.
+    if ((await hiddenAuthorIds(ctx)).has(authorId)) return [];
     const podcasts = await ctx.db
       .query("podcasts")
       .withIndex("by_author", (q) => q.eq("authorId", authorId))
@@ -165,6 +179,9 @@ export const getByShow = query({
       .withIndex("by_show", (q) => q.eq("showId", showId))
       .order("desc")
       .take(100);
+    // A show's episodes all share its author.
+    const first = podcasts[0];
+    if (first && (await hiddenAuthorIds(ctx)).has(first.authorId)) return [];
     return await Promise.all(podcasts.map((p) => toCard(ctx, p)));
   },
 });
@@ -206,7 +223,9 @@ export const getById = query({
   handler: async (ctx, args) => {
     const podcastId = ctx.db.normalizeId("podcasts", args.podcastId);
     const p = podcastId && (await ctx.db.get("podcasts", podcastId));
-    if (!p) return null;
+    // Hidden by a block reads as missing. The file routes (audio, cover,
+    // transcripts) call this without a session, so the files stay public.
+    if (!p || (await hiddenAuthorIds(ctx)).has(p.authorId)) return null;
     const [show, author] = await Promise.all([
       ctx.db.get("shows", p.showId),
       ctx.db.get("users", p.authorId),
@@ -250,19 +269,19 @@ export const getSimilar = query({
   handler: async (ctx, { podcastId }) => {
     const podcast = await ctx.db.get("podcasts", podcastId);
     if (podcast === null) return [];
-    const similar = await ctx.db
-      .query("podcasts")
-      .withIndex("by_language", (q) =>
-        q.eq("languageCode", podcast.languageCode),
-      )
-      .order("desc")
-      .take(5);
-    return await Promise.all(
-      similar
-        .filter((p) => p._id !== podcastId)
-        .slice(0, 4)
-        .map((p) => toCard(ctx, p)),
+    const hidden = await hiddenAuthorIds(ctx);
+    if (hidden.has(podcast.authorId)) return [];
+    const similar = await takeWhere(
+      ctx.db
+        .query("podcasts")
+        .withIndex("by_language", (q) =>
+          q.eq("languageCode", podcast.languageCode),
+        )
+        .order("desc"),
+      4,
+      (p) => p._id !== podcastId && !hidden.has(p.authorId),
     );
+    return await Promise.all(similar.map((p) => toCard(ctx, p)));
   },
 });
 

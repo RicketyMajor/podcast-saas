@@ -1,3 +1,4 @@
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { preloadQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { HomeFeed } from "@/components/podcast/HomeFeed";
@@ -9,9 +10,11 @@ import { api } from "@/convex/_generated/api";
 export const metadata: Metadata = { title: "Descubrir" };
 
 async function preloadFeed() {
+  // With the session, so accounts hidden by a block never flash in.
+  const options = { token: await convexAuthNextjsToken() };
   const [preloadedTrending, preloadedShows] = await Promise.all([
-    preloadQuery(api.podcasts.getTrending, { limit: 12 }),
-    preloadQuery(api.shows.getPopular, { limit: 12 }),
+    preloadQuery(api.podcasts.getTrending, { limit: 12 }, options),
+    preloadQuery(api.shows.getPopular, { limit: 12 }, options),
   ]);
   return { preloadedTrending, preloadedShows };
 }

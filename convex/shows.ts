@@ -25,6 +25,7 @@ import {
   TITLE_MAX_CHARS,
   TITLE_MIN_CHARS,
 } from "./lib/limits";
+import { hiddenAuthorIds } from "./lib/social";
 import { normalizeSearchText, searchTextOf } from "./lib/text";
 import {
   hostsResult,
@@ -81,7 +82,8 @@ export const getById = query({
   handler: async (ctx, args) => {
     const showId = ctx.db.normalizeId("shows", args.showId);
     const show = showId && (await ctx.db.get("shows", showId));
-    if (!show) return null;
+    // Hidden by a block reads as missing; the cover route has no session.
+    if (!show || (await hiddenAuthorIds(ctx)).has(show.authorId)) return null;
     const author = await ctx.db.get("users", show.authorId);
     return {
       ...(await toCard(ctx, show)),
@@ -133,6 +135,7 @@ export const getByAuthor = query({
   args: { authorId: v.id("users") },
   returns: v.array(showCard),
   handler: async (ctx, { authorId }) => {
+    if ((await hiddenAuthorIds(ctx)).has(authorId)) return [];
     const shows = await ctx.db
       .query("shows")
       .withIndex("by_author", (q) => q.eq("authorId", authorId))
@@ -142,21 +145,24 @@ export const getByAuthor = query({
   },
 });
 
-// An empty show has nothing to play: discovery lists skip it. Both lists
-// read 2× what they return and drop the empties.
+// An empty show has nothing to play and a hidden author's (a block,
+// lib/social.ts) can't be seen: discovery lists skip both. Both lists read
+// 2× what they return.
 // ponytail: an empty show has 0 views (moving or deleting episodes takes
 // their views along), so it can only crowd out shows that were never played
 // (ties at 0 come newest first) or, in search, weaker matches. A flood of new
-// empty shows can leave a row short; the fix is a `listed` flag kept by the
-// episode mutations, indexed with totalViews and as a search filterField.
+// empty shows, or many from blocked accounts, can leave a row short; the fix
+// is a `listed` flag kept by the episode mutations, indexed with totalViews
+// and as a search filterField.
 async function listedCards(
   ctx: QueryCtx,
   shows: Doc<"shows">[],
   limit: number,
 ) {
+  const hidden = await hiddenAuthorIds(ctx);
   return await Promise.all(
     shows
-      .filter((show) => show.episodeCount > 0)
+      .filter((show) => show.episodeCount > 0 && !hidden.has(show.authorId))
       .slice(0, limit)
       .map((show) => toCard(ctx, show)),
   );
