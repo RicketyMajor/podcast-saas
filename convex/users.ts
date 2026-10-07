@@ -114,7 +114,8 @@ export const getSettings = query({
     v.null(),
     v.object({
       _id: v.id("users"),
-      name: v.string(), // the name shown today, as the form's start
+      displayName: v.string(), // "" = they use their account's name
+      accountName: v.string(), // the sign-up or Google name ("" if none)
       bio: v.string(),
       website: v.string(),
       avatarUrl, // the photo they uploaded
@@ -126,7 +127,8 @@ export const getSettings = query({
     if (user === null) return null;
     return {
       _id: user._id,
-      name: user.displayName ?? user.name?.trim() ?? "",
+      displayName: user.displayName ?? "",
+      accountName: user.name?.trim() ?? "",
       bio: user.bio ?? "",
       website: user.website ?? "",
       avatarUrl: user.avatarStorageId
@@ -180,11 +182,8 @@ export const updateProfile = mutation({
       args.avatar === "remove"
         ? undefined
         : (newAvatar ?? user.avatarStorageId);
-    // Blank, or the account's own name, means "use the account's name".
-    const displayName =
-      fields.displayName === "" || fields.displayName === user.name?.trim()
-        ? undefined
-        : fields.displayName;
+    // Blank = use the account's name (and follow it when Google changes it).
+    const displayName = fields.displayName || undefined;
     await ctx.db.patch("users", user._id, {
       displayName,
       bio: fields.bio || undefined,

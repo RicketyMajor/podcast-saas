@@ -39,6 +39,7 @@ import {
 import { useLeaveWarning } from "@/hooks/use-leave-warning";
 import { uploadFile } from "@/lib/upload";
 import { cn, formatCount } from "@/lib/utils";
+import { ANONYMOUS_NAME, oneLine } from "@/convex/lib/profile";
 import { coverFileError } from "@/lib/validations/podcast";
 import {
   profileFormSchema,
@@ -95,8 +96,10 @@ function Form({ settings }: { settings: Settings }) {
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     mode: "onTouched",
+    // Blank unless they chose a name: the account's shows as placeholder, so
+    // a long Google name never blocks saving the other fields.
     defaultValues: {
-      displayName: settings.name,
+      displayName: settings.displayName,
       bio: settings.bio,
       website: settings.website,
     },
@@ -128,10 +131,11 @@ function Form({ settings }: { settings: Settings }) {
       : photo === "keep"
         ? (settings.avatarUrl ?? settings.accountImageUrl)
         : settings.accountImageUrl;
-  const initial = (displayName.trim() || settings.name || "?")
+  // Same fallback as authorNameOf, so the preview matches the saved profile.
+  const initial = (displayName.trim() || settings.accountName || ANONYMOUS_NAME)
     .charAt(0)
     .toUpperCase();
-  const bioLength = bio.replace(/\s+/g, " ").trim().length;
+  const bioLength = oneLine(bio).length;
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -244,6 +248,7 @@ function Form({ settings }: { settings: Settings }) {
                   {...field}
                   id="profile-name"
                   autoComplete="name"
+                  placeholder={settings.accountName || ANONYMOUS_NAME}
                   maxLength={DISPLAY_NAME_MAX_CHARS}
                   aria-invalid={fieldState.invalid}
                   aria-describedby="profile-name-help"

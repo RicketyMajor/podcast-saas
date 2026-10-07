@@ -11,7 +11,11 @@ export type ProfileInput = {
   website: string;
 };
 
-const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
+// What authorNameOf shows when an account has no name at all.
+export const ANONYMOUS_NAME = "Anónimo";
+
+/** The bio as stored and counted: one line, single spaces. */
+export const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
 
 /** What gets stored: trimmed, the bio on one line; "" = clear the field. */
 export function cleanProfile(input: ProfileInput): ProfileInput {

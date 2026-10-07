@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { ANONYMOUS_NAME } from "./profile";
 import { searchTextOf } from "./text";
 
 // MutationCtx and ActionCtx-backed queries extend QueryCtx, so this covers both.
@@ -37,7 +38,7 @@ export function assertOwner(
 
 /** Name shown everywhere (denormalized into `authorName`): theirs, else the account's. */
 export function authorNameOf(user: Doc<"users">) {
-  return user.displayName?.trim() || user.name?.trim() || "Anónimo";
+  return user.displayName?.trim() || user.name?.trim() || ANONYMOUS_NAME;
 }
 
 /** The photo they uploaded, else their provider's (Google), else null. */
